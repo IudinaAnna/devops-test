@@ -1,4 +1,4 @@
-FROM redis:alpine3.18
+FROM redis:latest
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 ENV USER_ID=${USER_ID}
