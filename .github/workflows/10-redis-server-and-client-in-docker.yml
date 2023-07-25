@@ -72,8 +72,10 @@ jobs:
       
       - name: Check redis-server container status
         run: |
-          if [[ "${{ env.SERVER_STATUS }}" != "${{ env.CONTAINER_STATUS }}" ]]; then
-          echo "Containers did not exit successfully"
+          if [[ "${{ env.SERVER_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
+          echo "Container is running"
+          esle
+          echo "Container exited"
           exit 1
           fi
 
@@ -85,8 +87,10 @@ jobs:
       
       - name: Check redis-server container status
         run: |
-          if [[ "${{ env.CLIENT_STATUS }}" != "${{ env.CONTAINER_STATUS }}" ]]; then
-          echo "Containers did not exit successfully"
+          if [[ "${{ env.CLIENT_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
+          echo "Container is running"
+          esle
+          echo "Container exited"
           exit 1
           fi
 
