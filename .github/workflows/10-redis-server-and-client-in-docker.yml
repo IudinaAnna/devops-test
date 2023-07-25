@@ -71,7 +71,7 @@ jobs:
       
       - name: Check redis-server container status
         run: |
-          if [[ "${{ env.STATUS }}" != "${{ env.CONTAINER_STATUS }}" ]]; then
+          if [[ "${{ env.SERVER_STATUS }}" != "${{ env.CONTAINER_STATUS }}" ]]; then
           echo "Containers did not exit successfully"
           exit 1
           fi
@@ -81,6 +81,14 @@ jobs:
           docker run -d --name redis-client --network redisNetwork redis redis-cli -h redis-server|
           CLIENT_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-client )
           echo "CLIENT_STATUS=${CLIENT_STATUS}" >> $GITHUB_ENV
+      
+      - name: Check redis-server container status
+        run: |
+          if [[ "${{ env.CLIENT_STATUS }}" != "${{ env.CONTAINER_STATUS }}" ]]; then
+          echo "Containers did not exit successfully"
+          exit 1
+          fi
+
 
       - name: Set key using Redis CLI
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
