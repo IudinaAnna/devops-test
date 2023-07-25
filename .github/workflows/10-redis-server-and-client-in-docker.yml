@@ -78,7 +78,7 @@ jobs:
 
       - name: Run redis-client
         run: |
-          docker run -d --name redis-client --network redisNetwork redis redis-cli -h redis-server|
+          docker run -d --name redis-client --network redisNetwork redis redis-cli -h redis-server
           CLIENT_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-client )
           echo "CLIENT_STATUS=${CLIENT_STATUS}" >> $GITHUB_ENV
       
