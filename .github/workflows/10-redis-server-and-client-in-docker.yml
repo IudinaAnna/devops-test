@@ -59,12 +59,12 @@ jobs:
           docker build -t 10-redis-client-and-server-in-docker:0.1  \
           --build-arg USER_ID=${{ env.BUILD_USER_ID }} \
           --build-arg GROUP_ID=${{ env.BUILD_GROUP_ID }} \
-          ./docker/10-redis-client-and-server-in-docker/src
+          ./docker/10-redis-server-and-client-in-docker/src
 
       - name: Run redis-server
         run: |
           docker run -d --name my-redis-server --network redisNetwork \
-          --mount type=bind,source=${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report,target=/data \
+          --mount type=bind,source=${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report,target=/data \
           10-redis-client-and-server-in-docker:0.1 
 
       - name: Run redis-client
@@ -74,12 +74,12 @@ jobs:
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
 
       - name: Check if dump.rdb file was created successfully
-        run: ./check_exit_code_and_logs.sh  'cat ./docker/10-redis-client-and-server-in-docker/report/dump.rdb'
+        run: ./check_exit_code_and_logs.sh  'cat ./docker/10-redis-server-and-client-in-docker/report/dump.rdb'
 
       - name: Get the key
         run: |
           docker run -d --name my-redis-container redis:alpine3.18
-          docker cp ./docker/10-redis-client-and-server-in-docker/report/dump.rdb my-redis-container:/data
+          docker cp ./docker/10-redis-server-and-client-in-docker/report/dump.rdb my-redis-container:/data
           docker stop my-redis-container
           docker start my-redis-container
           GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
@@ -96,7 +96,7 @@ jobs:
 
       - name: Check report folder rights
         run: |
-          folder_path="${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report"
+          folder_path="${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report"
           user=$(stat -c '%U' $folder_path)
           group=$(stat -c '%G' $folder_path)
           if [[ "$user" == "$(id -un)" && "$group" == "$(id -gn)" ]]; then
