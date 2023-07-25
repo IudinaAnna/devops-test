@@ -74,7 +74,7 @@ jobs:
         run: |
           if [[ "${{ env.SERVER_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
           echo "Container is running"
-          esle
+          else
           echo "Container exited"
           exit 1
           fi
@@ -89,7 +89,7 @@ jobs:
         run: |
           if [[ "${{ env.CLIENT_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
           echo "Container is running"
-          esle
+          else
           echo "Container exited"
           exit 1
           fi
