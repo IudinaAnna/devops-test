@@ -1,4 +1,4 @@
-name: D-13 Redis Server and Client in Docker
+name: D-10 Redis Server and Client in Docker
 
 on:
   push:
@@ -45,8 +45,8 @@ jobs:
 
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir ./docker/13-redis-client-and-server/report
-          if [ -d "${{ github.workspace }}/docker/13-redis-client-and-server/report" ]; then
+          mkdir ./docker/10-redis-server-and-client-in-docker/report
+          if [ -d "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report" ]; then
           echo "Data folder was created"
           ls ./docker/10-redis-server-and-client-in-docker
           else
@@ -63,10 +63,6 @@ jobs:
 
       - name: Run redis-server
         run: |
-          docker run -d --network redis-network \
-          --name redis-server \
-          --mount type=bind,source=${{ github.workspace }}/docker/13-redis-client-and-server/data,target=/data \
-          13-redis:0.1
           docker run -d --name my-redis-server --network redisNetwork \
           --mount type=bind,source=${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report,target=/data \
           10-redis-client-and-server-in-docker:0.1 
