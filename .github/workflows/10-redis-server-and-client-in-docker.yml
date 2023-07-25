@@ -67,7 +67,7 @@ jobs:
           10-redis-client-and-server-in-docker:0.1 
 
       - name: Run redis-client
-        run: docker run -it --name redis-client --network redisNetwork redis redis-cli -h my-redis-server
+        run: docker run -d --name redis-client --network redisNetwork redis redis-cli -h my-redis-server
 
       - name: Set key using Redis CLI
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
