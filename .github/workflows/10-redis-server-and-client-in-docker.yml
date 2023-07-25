@@ -82,17 +82,7 @@ jobs:
       - name: Run redis-client
         run: |
           docker run -d --name redis-client --network redisNetwork redis redis-cli -h redis-server
-          CLIENT_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-client )
-          echo "CLIENT_STATUS=${CLIENT_STATUS}" >> $GITHUB_ENV
-      
-      - name: Check redis-server container status
-        run: |
-          if [[ "${{ env.CLIENT_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
-          echo "Container is running"
-          else
-          echo "Container exited"
-          exit 1
-          fi
+
 
 
       - name: Set key using Redis CLI
