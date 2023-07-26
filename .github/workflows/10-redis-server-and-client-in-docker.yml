@@ -108,7 +108,7 @@ jobs:
 #         uses: mxschmitt/action-tmate@v3.11
 
       - name: Check if dump.rdb file was created successfully
-        run: ./wait_status_code_and_logs.sh  'cat ${REPORT_FOLDER}/dump.rdb'
+        run: ./wait_status_code_and_logs.sh  "cat ${REPORT_FOLDER}/dump.rdb"
 
       - name: Get the key
         run: |
