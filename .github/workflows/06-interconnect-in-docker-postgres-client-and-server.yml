@@ -21,20 +21,23 @@ jobs:
         run: docker version
 
       - name: Create network
-        run: docker network create demo-network
-
+        run: |
+          docker network create demo-network
+          docker network ls | grep demo-network
+          if [ $? -eq 0 ]; then
+          echo " "demo-network" network was created successfully"
+          fi
       - name: Run postgres-server
         run: |
-          docker run --rm --name postgres-server \
+          docker run -d --name postgres-server \
           --network demo-network --network-alias postgres-alias \
           -e POSTGRES_USER=aiudina \
           -e POSTGRES_PASSWORD=123 \
           -d \
           -p 6432:5432 \
           postgres:14.5-alpine3.16
-          SERVER_STATUS=$(docker inspect -f '{{.State.Status}}' postgres_server)
-          echo "SERVER_STATUS: ${SERVER_STATUS}" >> $GITHUB_ENV
-
+          SERVER_STATUS=$(docker inspect -f '{{.State.Status}}' postgres-server)
+          echo "SERVER_STATUS=${SERVER_STATUS}" >> $GITHUB_ENV
       - name: Check postgres-server status
         run: |
           if [[ "${{ env.SERVER_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
@@ -43,14 +46,13 @@ jobs:
           echo "Postgres-server container is not running"
           exit 1
           fi
-
       - name: Run postgres-client
         run: |
           docker run --rm --name postgres_client \
           --network demo-network \
           --network-alias psql-client \
           postgres:latest \
-          psql postgresql://postgres:pass123@postgres-alias:5432'
+          psql postgresql://postgres:pass123@postgres-alias:5432
           
           \q
           echo "The connection between psql-server and psql-client is successful"
