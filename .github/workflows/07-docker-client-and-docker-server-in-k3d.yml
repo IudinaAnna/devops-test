@@ -43,9 +43,13 @@ jobs:
 
 #       - name: Setup tmate session
 #         uses: mxschmitt/action-tmate@v3.11    
-        
+      
+      - name: Check curl 
+        run: |
+          ./wait_status_code_and_logs.sh 'curl http://localhost:${{ env.PORT }}
+          
       - name: Check HTTP status of nginx site
         uses: lakuapik/gh-actions-http-status@v1
         with:
-          sites: '["http://localhost:${{ env.PORT }}/nginx"]'
+          sites: '["http://localhost:${{ env.PORT }}"]'
           expected: '[200]'   
