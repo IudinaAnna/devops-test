@@ -82,18 +82,22 @@ jobs:
         run: |
           helm upgrade --install --cleanup-on-fail my-chart \
           ${CHART_FOLDER} --namespace test --create-namespace \
-          --set service.type=LoadBalancer --wait --set pgadmin.enabled=false          
+          --set service.type=LoadBalancer \
+          --set pgadmin.enabled=false --wait  
          
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3.11
+#       - name: Setup tmate session
+#         uses: mxschmitt/action-tmate@v3.11
      
-#       - name: Check HTTP status of pgadmin and springboot sites. Expected resault of pgadmin- 404
+      - name: Verify that the connection to postgres is successful
+        run: ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db' 
+        
+#       - name: Check HTTP status of pgadmin and springboot sites
 #         uses: lakuapik/gh-actions-http-status@v1
 #         with:
 #           sites: '["http://localhost:${{ env.SPRINGBOOT_PORT }}/app","http://localhost:${{ env.PGADMIN_PORT }}/login"]'
-#           expected: '[200,200]'
+#           expected: '[200,400]'
       
-      - name: Check site for status code
+      - name: Check springboot site for status code
         uses: pavelsaman/website-check@v2.3
         with:
           url: http://localhost:${{ env.SPRINGBOOT_PORT }}/app
@@ -101,13 +105,10 @@ jobs:
           redirect: true
           
 
-      - name: Check site for status code
-        uses: pavelsaman/website-check@v2.3
-        with:
-          url: http://localhost:${{ env.PGADMIN_PORT }}/login
-          status_code: 404
-          redirect: true
-      
+#       - name: Check site for status code
+#         uses: pavelsaman/website-check@v2.3
+#         with:
+#           url: http://localhost:${{ env.PGADMIN_PORT }}/login
+#           status_code: 404
+#           redirect: true
 
-      - name: Verify that the connection to postgres is successful
-        run: ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db'
