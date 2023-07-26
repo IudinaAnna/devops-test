@@ -106,14 +106,12 @@ jobs:
           
       - name: Check pgadmin site 
         run: |
-          if curl -s http://localhost:8002/app >/dev/null; then
-          curl_exit_code=$?
-          if [ $curl_exit_code -eq 52 ]; then
-          echo "pgAdmin does not exist."
-          elif [ $curl_exit_code -eq 0 ]; then
-          echo "pgAdmin exists.Unexpected error occurred with curl. Exit code: $curl_exit_code"
+          curl  http://localhost:8002/app >> 160logs.txt
+          if grep -q "empty reply from server" 160logs.txt; then
+          echo "Found 'empty reply from server' in the log file."
+          else
+          echo "pgAdmin exists. Unexpected error occurred with curl"
           exit 1
-          fi
           fi
  
 
