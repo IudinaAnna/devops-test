@@ -48,9 +48,10 @@ jobs:
         run: |
           ./wait_status_code_and_logs.sh 'curl -i http://localhost:${{ env.PORT }}'
           curl -i http://localhost:${{ env.PORT }}
+          sleep 15
           
       - name: Check HTTP status of nginx site
-        uses: fjogeleit/http-request-action@v1
+        uses: lakuapik/gh-actions-http-status@v1
         with:
           sites: '["http://localhost:${{ env.PORT }}"]'
           expected: '[200]'   
