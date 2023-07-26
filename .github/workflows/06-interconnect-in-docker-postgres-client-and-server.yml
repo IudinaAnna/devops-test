@@ -47,9 +47,9 @@ jobs:
           fi
       - name: Run postgres-client
         run: |
-          ./wait_status_code_and_logs.sh docker run --rm --name postgres_client \
+          ./wait_status_code_and_logs.sh "docker run --rm --name postgres_client \
           --network demo-network \
           --network-alias psql-client \
           postgres:latest \
-          psql postgresql://aiudina:123@postgres-alias:5432
+          psql postgresql://aiudina:123@postgres-alias:5432"
           echo "The connection between postgres-server and postgres-client is successful"
