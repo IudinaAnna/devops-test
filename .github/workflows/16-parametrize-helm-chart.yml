@@ -96,7 +96,7 @@ jobs:
 
       - name: Install helm chart `my-chart` for prodaction version - without pgadmin
         run: |
-          helm uninstall ${CHART_FOLDER} -n test
+          helm uninstall my-chart -n test
           helm upgrade --install --cleanup-on-fail my-chart \
           ${CHART_FOLDER} --namespace test --create-namespace \
           --set service.type=LoadBalancer --set pgadmin.enabled=false --wait 
