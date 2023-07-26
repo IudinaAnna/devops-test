@@ -46,7 +46,7 @@ jobs:
       
       - name: Check curl 
         run: |
-          ./wait_status_code_and_logs.sh 'curl http://localhost:${{ env.PORT }}
+          ./wait_status_code_and_logs.sh 'curl http://localhost:${{ env.PORT }}'
           
       - name: Check HTTP status of nginx site
         uses: lakuapik/gh-actions-http-status@v1
