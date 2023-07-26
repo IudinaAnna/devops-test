@@ -65,14 +65,6 @@ jobs:
           -p ${{ env.PGADMIN_PORT }}:8081@loadbalancer \
           -p ${{ env.SPRINGBOOT_PORT }}:8080@loadbalancer \
           -p ${{ env.PSQL_PORT }}:6432@loadbalancer
-      
-
-      #       - name: Build, tag and push springboot
-      #         run: |
-      #           cd "${{ github.workspace }}/kubernetes/15-create-helm-chart/springboot-api-rest-example/api"
-      #           DOCKER_BUILDKIT=1 docker build -f ./docker/Dockerfile.prod -t spring-boot-app:0.1 .
-      #           docker tag spring-boot-app:0.1 localhost:12345/spring-boot-app:0.1
-      #           docker push localhost:12345/spring-boot-app:0.1
 
       - name: Build, tag and push the image
         uses: docker/build-push-action@v4
@@ -90,21 +82,13 @@ jobs:
           helm upgrade --install --cleanup-on-fail my-chart \
           ./kubernetes/16-parametrize-helm-chart/my-chart --namespace test --create-namespace \
           --set service.type=LoadBalancer --wait
-
-      - name: Check site for status code
-        uses: pavelsaman/website-check@v2.3
+      
+      - name: Check HTTP status of pgadmin and springboot sites
+        uses: lakuapik/gh-actions-http-status@v1
         with:
-          url: http://localhost:${{ env.PGADMIN_PORT }}/app
-          status_code: 200
-          redirect: true
-
-      - name: Check site for status code
-        uses: pavelsaman/website-check@v2.3
-        with:
-          url: http://localhost:${{ env.SPRINGBOOT_PORT }}/login
-          status_code: 200
-          redirect: true
-
+         sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app", "http://localhost:${{ env.SPRINGBOOT_PORT }}/login"'
+         expected: '[200, 200]'
+         
       - name: verify that the connection to postgres is successful
         run: |
           ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db'
@@ -119,8 +103,8 @@ jobs:
       - name: Check HTTP status of pgadmin and springboot sites
         uses: lakuapik/gh-actions-http-status@v1
         with:
-          sites: '["http://localhost:16999/login"]'
-          expected: '[200]'
+          sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app","http://localhost:16999/login"]'
+          expected: '[404,200]'
 
       - name: Verify that the connection to postgres is successful
         run: ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db'
