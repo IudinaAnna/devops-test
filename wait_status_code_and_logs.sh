@@ -13,7 +13,7 @@ ERRCOLOR=`tput setaf 198`
 count=1
 sleep_seconds_passed=0
 waitsec=5
-sleep_timeout_seconds=30
+sleep_timeout_seconds=300
 try_msg="try again in $waitsec seconds"
 #Trim the command parameter
 command=$(echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
