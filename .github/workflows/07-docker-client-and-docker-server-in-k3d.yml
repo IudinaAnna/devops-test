@@ -14,6 +14,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check HTTP status of nginx site
+        uses: lakuapik/gh-actions-http-status@v1
+        with:
+          sites: '["http://www.google.com"]'
+          expected: '[200]' 
+          
       - name: Checkout repository
         uses: actions/checkout@v3
 
