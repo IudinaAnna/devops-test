@@ -1,10 +1,9 @@
 name: D-10 Redis Server and Client in Docker
-
 on:
   push:
     paths:
-      - 'docker/10-redis-client-and-server-in-docker/**'
-      - '.github/workflows/10-redis-client-and-server-in-docker.yml'
+      - 'docker/10-redis-server_and_client-in-docker/**'
+      - '.github/workflows/10-redis-server_and_client-in-docker.yml'
 
 env:
   BUILD_USER_ID: "$(id -u)"
@@ -29,7 +28,7 @@ jobs:
 
       - name: Check if directory
         run: |
-          if [ -d "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker" ]; then
+          if [ -d "${{ github.workspace }}/docker/10-redis-server_and_client-in-docker" ]; then
           echo "Directory exists"
           else
           echo "Directory does not exist"
@@ -46,8 +45,8 @@ jobs:
 
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir ./docker/10-redis-client-and-server-in-docker/report
-          if [ -d "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report" ]; then
+          mkdir ./docker/10-redis-server_and_client-in-docker/report
+          if [ -d "${{ github.workspace }}/docker/10-redis-server_and_client-in-docker/report" ]; then
           echo "Data folder was created"
           ls ./docker/10-redis-server-and-client-in-docker
           else
@@ -65,7 +64,7 @@ jobs:
       - name: Run redis-server
         run: |
           docker run -d --name redis-server --network redisNetwork \
-          --mount type=bind,source=${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report,target=/data \
+          --mount type=bind,source=${{ github.workspace }}/docker/10-redis-server_and_client-in-docker/report,target=/data \
           10-redis-client-and-server-in-docker:0.1 
           SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-server )
           echo "SERVER_STATUS=${SERVER_STATUS}" >> $GITHUB_ENV
@@ -98,12 +97,12 @@ jobs:
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
 
       - name: Check if dump.rdb file was created successfully
-        run: ./wait_status_code_and_logs.sh  'cat ./docker/10-redis-client-and-server-in-docker/report/dump.rdb'
+        run: ./wait_status_code_and_logs.sh  'cat ./docker/10-redis-server_and_client-in-docker/report/dump.rdb'
 
       - name: Get the key
         run: |
           docker run -d --name my-redis-container redis:alpine3.18
-          docker cp ./docker/10-redis-client-and-server-in-docker/report/dump.rdb my-redis-container:/data
+          docker cp ./docker/10-redis-server_and_client-in-docker/report/dump.rdb my-redis-container:/data
           docker stop my-redis-container
           docker start my-redis-container
           GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
@@ -120,7 +119,7 @@ jobs:
 
       - name: Check report folder rights
         run: |
-          folder_path="${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report"
+          folder_path="${{ github.workspace }}/docker/10-redis-server_and_client-in-docker/report"
           user=$(stat -c '%U' $folder_path)
           group=$(stat -c '%G' $folder_path)
           if [[ "$user" == "$(id -un)" && "$group" == "$(id -gn)" ]]; then
