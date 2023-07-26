@@ -71,7 +71,7 @@ jobs:
       - name: Run redis-server
         run: |
           docker run -d --name redis-server --network redisNetwork \
-          --mount type=bind,source=${{ env.REPORT_FOLDER }},target=/data \
+          --mount type=bind,source=${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report,target=/data \
           10-redis-client-and-server-in-docker:0.1 
           
           SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-server )
@@ -108,7 +108,7 @@ jobs:
 #         uses: mxschmitt/action-tmate@v3.11
 
       - name: Check if dump.rdb file was created successfully
-        run: ./wait_status_code_and_logs.sh  "cat ${{ env.REPORT_FOLDER }}/dump.rdb"
+        run: ./wait_status_code_and_logs.sh  'cat "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report/dump.rdb"'
 
       - name: Get the key
         run: |
