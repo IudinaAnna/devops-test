@@ -41,8 +41,8 @@ jobs:
       - name: Add port to cluster
         run: k3d cluster edit demo-cluster --port-add ${{ env.PORT }}:8092@loadbalancer
 
-#       - name: Setup tmate session
-#         uses: mxschmitt/action-tmate@v3.11    
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3.11    
       
       - name: Check curl 
         run: |
