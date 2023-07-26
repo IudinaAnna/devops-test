@@ -92,8 +92,8 @@ jobs:
       - name: Check HTTP status of pgadmin and springboot sites. Expected resault of pgadmin- 404
         uses: lakuapik/gh-actions-http-status@v1
         with:
-          sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app","http://localhost:${{ env.SPRINGBOOT_PORT }}/login"]'
-          expected: '[404,200]'
+          sites: '["http://localhost:${{ env.SPRINGBOOT_PORT }}/app","http://localhost:${{ env.PGADMIN_PORT }}/login"]'
+          expected: '[200,200]'
 
 #       - name: Check site for status code
 #         uses: pavelsaman/website-check@v2.3
