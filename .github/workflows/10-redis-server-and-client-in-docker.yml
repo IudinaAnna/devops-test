@@ -103,7 +103,7 @@ jobs:
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
 
       - name: Check if dump.rdb file was created successfully
-        run: ./check_exit_code_and_logs.sh  'cat ${{ env.REPORT_FOLDER }}/dump.rdb'
+        run: ./check_exit_code_and_logs.sh  'cat $REPORT_FOLDER/dump.rdb'
 
       - name: Get the key
         run: |
