@@ -10,6 +10,7 @@ env:
   PGADMIN_PORT: "8001"
   PSQL_PORT: "6432"
   SRC_FOLDER: "${{ github.workspace }}/kubernetes/16-parametrize-helm-chart/springboot-api-rest-example/api"
+  CHART_FOLDER: "${{ github.workspace }}/kubernetes/16-parametrize-helm-chart/my-chart"
 
 jobs:
   build:
@@ -34,7 +35,7 @@ jobs:
 
       - name: Check working directory
         run: |
-          if [ -d "${{ github.workspace }}/kubernetes/16-parametrize-helm-chart" ]; then
+          if [ -d ${CHART_FOLDER} ]; then
           echo "Directory exists"
           else
           echo "Directory does not exist"
@@ -80,7 +81,7 @@ jobs:
       - name: Install helm chart `my-chart`
         run: |
           helm upgrade --install --cleanup-on-fail my-chart \
-          ./kubernetes/16-parametrize-helm-chart/my-chart --namespace test --create-namespace \
+          ${CHART_FOLDER} --namespace test --create-namespace \
           --set service.type=LoadBalancer --wait
       
       - name: Check HTTP status of pgadmin and springboot sites
@@ -95,9 +96,9 @@ jobs:
 
       - name: Install helm chart `my-chart` for prodaction version. Expected - pgadmin was not applied
         run: |
-          helm uninstall ./kubernetes/15-create-helm-chart/my-chart -n test
+          ./wait_status_code_and_logs.sh 'helm uninstall ${CHART_FOLDER} -n test'
           helm upgrade --install --cleanup-on-fail my-chart \
-          ./kubernetes/15-create-helm-chart/my-chart --namespace test --create-namespace \
+          ${CHART_FOLDER} --namespace test --create-namespace \
           --set service.type=LoadBalancer --set pgadmin.enabled=false --wait 
 
       - name: Check HTTP status of pgadmin and springboot sites
