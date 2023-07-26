@@ -48,8 +48,8 @@ jobs:
       
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir ${REPORT_FOLDER}
-          if [ -d ${REPORT_FOLDER} ]; then
+          mkdir ${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report
+          if [ -d ${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report ]; then
           echo "Data folder was created"
           ls ./docker/10-redis-server-and-client-in-docker
           else
@@ -65,8 +65,8 @@ jobs:
           push: false
           tags: 10-redis-client-and-server-in-docker:0.1
           build-args: |
-            BUILD_USER_ID
-            BUILD_GROUP_ID
+            BUILD_USER_ID=$(id -u)
+            BUILD_GROUP_ID=$(id -g)
 
       - name: Run redis-server
         run: |
