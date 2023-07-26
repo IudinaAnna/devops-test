@@ -107,7 +107,7 @@ jobs:
       - name: Get the key
         run: |
           docker run -d --name my-redis-container redis:alpine3.18
-          docker cp ./docker/10-redis-client-and-server-in-docker/report/dump.rdb my-redis-container:/data
+          docker cp ./docker/10-redis-server-and-client-in-docker/report/dump.rdb my-redis-container:/data
           docker stop my-redis-container
           docker start my-redis-container
           GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
