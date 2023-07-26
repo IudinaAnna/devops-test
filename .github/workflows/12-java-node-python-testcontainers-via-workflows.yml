@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/12-java-node-python-testcontainers-via-workflows.yml'
       - 'kubernetes/12-java-node-python-testcontainers-via-workflows/**'
+env:
+  SRC_FOLDER: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/src"
+  REPORT_FOLDER: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report"
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,17 +30,16 @@ jobs:
       - name: Initialize and update submodule
         run: |
           git submodule update --init --recursive 
-          cp -r ./submodules/testcontainers-java ./kubernetes/12-java-node-python-testcontainers-via-workflows/src
-          cp -r ./submodules/testcontainers-python ./kubernetes/12-java-node-python-testcontainers-via-workflows/src
-          cp -r ./submodules/testcontainers-node ./kubernetes/12-java-node-python-testcontainers-via-workflows/src
+          cp -r ./submodules/testcontainers-java $SRC_FOLDER
+          cp -r ./submodules/testcontainers-python $SRC_FOLDER
+          cp -r ./submodules/testcontainers-node $SRC_FOLDER
 
       - name: Create report folder and check if it was successfully created
         run: |
-          report_folder="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report"
-          mkdir $report_folder
-          if [ -d $report_folder ]; then
+          mkdir $REPORT_FOLDER
+          if [ -d $REPORT_FOLDER ]; then
           echo "Report folder was created"
-          ls -lha ./kubernetes/12-java-node-python-testcontainers-via-workflows/report
+          ls -lha $REPORT_FOLDER
           else
           echo "Report folder wasn't created"
           exit 1
@@ -46,7 +49,7 @@ jobs:
         run: |
           k3d cluster create demo-cluster \
           --registry-create demo-registry:12345 \
-          --volume ${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report:/report
+          --volume $REPORT_FOLDER:/report
 
       - name: Create namespace and install argo via helm
         run: |
@@ -55,42 +58,75 @@ jobs:
           helm upgrade --install --cleanup-on-fail argowork argo/argo-workflows \
           --namespace argo-wf \
           --create-namespace --wait
+      
+      - name: Build, tag and push the java image
+        uses: docker/build-push-action@v4
+        with:
+          context: $SRC_FOLDER
+          file: $SRC_FOLDER/Dockerfile.java
+          push: true
+          tags: localhost:12345/12-java-testcontainers-via-workflows:0.1
+          build-args: |
+            USER_ID=$(id -u)
+            GROUP_ID=$(id -g)
+          
+#       - name: Build, tag and push `12-java-testcontainers-via-workflows:0.1` image
+#         run: |
+#           docker build -t 12-java-testcontainers-via-workflows:0.1 \
+#           --build-arg USER_ID=$(id -u) \
+#           --build-arg GROUP_ID=$(id -g) \
+#           -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.java \
+#           ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/
+          
+#           docker tag 12-java-testcontainers-via-workflows:0.1 localhost:12345/12-java-testcontainers-via-workflows:0.1
+          
+#           docker push localhost:12345/12-java-testcontainers-via-workflows:0.1
 
-      - name: Build, tag and push `12-java-testcontainers-via-workflows:0.1` image
-        run: |
-          docker build -t 12-java-testcontainers-via-workflows:0.1 \
-          --build-arg USER_ID=$(id -u) \
-          --build-arg GROUP_ID=$(id -g) \
-          -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.java \
-          ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/
+      - name: Build, tag and push the python image
+        uses: docker/build-push-action@v4
+        with:
+          context: $SRC_FOLDER
+          file: $SRC_FOLDER/Dockerfile.python
+          push: true
+          tags: localhost:12345/12-python-testcontainers-via-workflows:0.1
+          build-args: |
+            USER_ID=$(id -u)
+            GROUP_ID=$(id -g) 
+            
+#       - name: Build, tag and push `12-python-testcontainers-via-workflows:0.1` image
+#         run: |
+#           docker build -t 12-python-testcontainers-via-workflows:0.1 \
+#           --build-arg USER_ID=$(id -u) \
+#           --build-arg GROUP_ID=$(id -g) \
+#           -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.python \
+#           ./kubernetes/12-java-node-python-testcontainers-via-workflows/src
           
-          docker tag 12-java-testcontainers-via-workflows:0.1 localhost:12345/12-java-testcontainers-via-workflows:0.1
+#           docker tag 12-python-testcontainers-via-workflows:0.1 localhost:12345/12-python-testcontainers-via-workflows:0.1
           
-          docker push localhost:12345/12-java-testcontainers-via-workflows:0.1
+#           docker push localhost:12345/12-python-testcontainers-via-workflows:0.1
 
-      - name: Build, tag and push `12-python-testcontainers-via-workflows:0.1` image
-        run: |
-          docker build -t 12-python-testcontainers-via-workflows:0.1 \
-          --build-arg USER_ID=$(id -u) \
-          --build-arg GROUP_ID=$(id -g) \
-          -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.python \
-          ./kubernetes/12-java-node-python-testcontainers-via-workflows/src
+      - name: Build, tag and push the python image
+        uses: docker/build-push-action@v4
+        with:
+          context: $SRC_FOLDER
+          file: $SRC_FOLDER/Dockerfile.node
+          push: true
+          tags: localhost:12345/12-node-testcontainers-via-workflows:0.1
+          build-args: |
+            USER_ID=$(id -u)
+            GROUP_ID=$(id -g)
+            
+#       - name: Build, tag and push `12-node-testcontainers-via-workflows:0.1` image
+#         run: |
+#           docker build -t 12-node-testcontainers-via-workflows:0.1 \
+#           --build-arg USER_ID=$(id -u) \
+#           --build-arg GROUP_ID=$(id -g) \
+#           -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.node \
+#           ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/
           
-          docker tag 12-python-testcontainers-via-workflows:0.1 localhost:12345/12-python-testcontainers-via-workflows:0.1
+#           docker tag 12-node-testcontainers-via-workflows:0.1 localhost:12345/12-node-testcontainers-via-workflows:0.1
           
-          docker push localhost:12345/12-python-testcontainers-via-workflows:0.1
-
-      - name: Build, tag and push `12-node-testcontainers-via-workflows:0.1` image
-        run: |
-          docker build -t 12-node-testcontainers-via-workflows:0.1 \
-          --build-arg USER_ID=$(id -u) \
-          --build-arg GROUP_ID=$(id -g) \
-          -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.node \
-          ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/
-          
-          docker tag 12-node-testcontainers-via-workflows:0.1 localhost:12345/12-node-testcontainers-via-workflows:0.1
-          
-          docker push localhost:12345/12-node-testcontainers-via-workflows:0.1
+#           docker push localhost:12345/12-node-testcontainers-via-workflows:0.1
 
       - name: Apply manifest
         run: |
@@ -137,12 +173,11 @@ jobs:
 
       - name: Check report folder rights
         run: |
-          folder_path="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report"
-          user=$(stat -c '%U' $folder_path)
-          group=$(stat -c '%G' $folder_path)
-          if [[ "$user" == "$(id -un)" && "$group" == "$(id -gn)" ]]; then
-          echo "User=$user, $(id -un)"
-          echo "Group=$group, $(id -gn)" 
+          USER=$(stat -c '%U' $REPORT_FOLDER)
+          GROUP=$(stat -c '%G' $REPORT_FOLDER)
+          if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
+          echo "USER=$USER, $(id -un)"
+          echo "GROUP=$GROUP, $(id -gn)" 
           else
           echo "Error: user and group are incorrect"
           exit 1
