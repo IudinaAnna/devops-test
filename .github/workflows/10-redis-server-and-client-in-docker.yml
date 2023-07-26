@@ -11,6 +11,7 @@ env:
   BUILD_GROUP_ID: "$(id -g)"
   EXPECTED_OUTPUT: "Anna"
   CONTAINER_STATUS: "running"
+  REPORT_FOLDER: "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report"
 
 jobs:
   build:
@@ -46,7 +47,7 @@ jobs:
 
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir ./docker/10-redis-server-and-client-in-docker/report
+          mkdir ${{ env.REPORT_FOLDER }}
           if [ -d "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report" ]; then
           echo "Data folder was created"
           ls ./docker/10-redis-server-and-client-in-docker
@@ -67,6 +68,7 @@ jobs:
           docker run -d --name redis-server --network redisNetwork \
           --mount type=bind,source=${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report,target=/data \
           10-redis-client-and-server-in-docker:0.1 
+          
           SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-server )
           echo "SERVER_STATUS=${SERVER_STATUS}" >> $GITHUB_ENV
       
@@ -98,12 +100,12 @@ jobs:
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
 
       - name: Check if dump.rdb file was created successfully
-        run: ./check_exit_code_and_logs.sh  'cat ./docker/10-redis-server-and-client-in-docker/report/dump.rdb'
+        run: ./check_exit_code_and_logs.sh  'cat ${{ env.REPORT_FOLDER }}/dump.rdb'
 
       - name: Get the key
         run: |
           docker run -d --name my-redis-container redis:alpine3.18
-          docker cp ./docker/10-redis-server-and-client-in-docker/report/dump.rdb my-redis-container:/data
+          docker cp ${{ env.REPORT_FOLDER }}/dump.rdb my-redis-container:/data
           docker stop my-redis-container
           docker start my-redis-container
           GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
