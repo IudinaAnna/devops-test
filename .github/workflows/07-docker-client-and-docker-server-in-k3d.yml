@@ -38,13 +38,11 @@ jobs:
       - name: Add port to cluster
         run: k3d cluster edit demo-cluster --port-add 14999:8092@loadbalancer
 
-      - name: Check connection to nginx
-        run: |
-          curl localhost:14999
-          HTTP_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" localhost:14999)
-          if [[ "$HTTP_RESPONSE" -eq 200 ]]; then
-          echo "Successfully connected to nginx. Status code:$HTTP_RESPONSE "
-          else
-          echo "Error: Status code: $HTTP_RESPONSE"
-          exit 1
-          fi
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3.11    
+        
+      - name: Check HTTP status of nginx site
+        uses: lakuapik/gh-actions-http-status@v1
+        with:
+          sites: '["http://localhost:14999"]'
+          expected: '[200]'   
