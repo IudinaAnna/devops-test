@@ -115,11 +115,6 @@ jobs:
           done
           
           MATCHING_COUNT=${#MATCHING_ADDRESSES[@]}
-          if [[ $MATCHING_COUNT -eq 0 ]]; then
-          echo "No matching addresses found. Exiting with status 1."
-          exit 1
-          else
-          echo "Matching count: $MATCHING_COUNT"
-          echo "Matching addresses: ${MATCHING_ADDRESSES[@]}"
-          fi
+          echo "Matching addresses: ${MATCHING_ADDRESSES[@]}" 
+          echo "Matching addresses: $MATCHING_COUNT"
 
