@@ -103,13 +103,18 @@ jobs:
           url: http://localhost:${{ env.SPRINGBOOT_PORT }}/app
           status_code: 200
           redirect: true
-        
+      
+      - name: Check if PGAdmin is abcent in the list of deployments
+        run: |
+          CHECK_DEPLOYMENTS=$(kubectl get deployments -n test -o jsonpath='{.items[*].metadata.name}')
+          if [[ $CHECK_DEPLOYMENTS =~ (^|[[:space:]])"pgadmin"($|[[:space:]]) ]]; then
+          echo "Deployment `pgadmin' is present in the `demo-chart` namespace."
+          exit 1
+          fi
+          
       - name: Check pgadmin site 
         run: |
           if curl -s http://localhost:${{ env.PGADMIN_PORT }}/login | grep -q "(52) Empty reply from server"; then
           echo "pgAdmin does not exist."
-          else
-          echo "Error"
-          exit 1
           fi
 
