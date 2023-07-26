@@ -1,0 +1,124 @@
+name: K-13 Three deployments with two services
+
+on:
+  push:
+    paths:
+      - '.github/workflows/13-create-3-deployments-with-2-services.yml'
+      - 'kubernetes/13-create-3-deployments-with-2-services/**'
+env:
+  MANIFESTS-FOLDER: "${{ github.workspace }}/kubernetes/13-create-3-deployments-with-2-services/manifests"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup k3d
+        uses: nolar/setup-k3d-k3s@v1
+
+      - name: Print current path
+        run: |
+          echo ${{ github.workspace }} 
+
+      - name: Check working directory
+        run: |
+          if [ -d "${{ github.workspace }}/kubernetes/13-create-3-deployments-with-2-services" ]; then
+          echo "Directory exists"
+          else
+          echo "Directory does not exist"
+          exit 1
+          fi
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Verify Kubernetes installation
+        run: k3d --version
+
+      - name: Create cluster with registry
+        run: k3d cluster create demo-cluster --registry-create demo-registry:12345
+
+      - name: Apply services manifests
+        run: |
+          kubectl apply -f ${{ env.MANIFESTS }}/service1.yml
+          kubectl apply -f ${{ env.MANIFESTS }}/service2.yml
+
+      - name: Apply deployments manifests
+        run: |
+          kubectl apply -f ${{ env.MANIFESTS }}/deployment1.yml
+          kubectl apply -f ${{ env.MANIFESTS }}/deployment2.yml
+          kubectl apply -f ${{ env.MANIFESTS }}/deployment3.yml
+
+      - name: Wait for pods to be ready
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl wait deployment/nginx-1 -n default --for=condition=available'
+          ./wait_status_code_and_logs.sh 'kubectl wait deployment/nginx-2 -n default --for=condition=available'
+          ./wait_status_code_and_logs.sh 'kubectl wait deployment/nginx-3 -n default --for=condition=available'
+
+      - name: Add ports to cluster
+        run: |
+          k3d cluster edit demo-cluster --port-add 17777:8092@loadbalancer
+          k3d cluster edit demo-cluster --port-add 18888:8093@loadbalancer
+
+      - name: Get First Service Addresses and Test load balancing
+        run: |
+          FIRST_SERVICE_ADRESSES=()
+          for i in {1..15}; do
+          FIRST_SERVICE_ADRESSES_DATA=$(curl -s http://localhost:17777 | grep -E -o "([0-9]{1,3}\.){1,3}[[:digit:]]{1,3}")
+          if [[ -n "$FIRST_SERVICE_ADRESSES_DATA" ]] && ! [[ "${FIRST_SERVICE_ADRESSES[@]}" =~ "$FIRST_SERVICE_ADRESSES_DATA" ]]; then
+          FIRST_SERVICE_ADRESSES+=("$FIRST_SERVICE_ADRESSES_DATA")
+          fi
+          sleep 1
+          done
+          
+          echo "IP adresses for second service: ${FIRST_SERVICE_ADRESSES[@]}"
+          
+          FIRST_IP_COUNT=${#FIRST_SERVICE_ADRESSES[@]}
+          echo "Number of unique ip adresses: $FIRST_IP_COUNT"
+          echo "FIRST_IP_COUNT=${FIRST_IP_COUNT}" >> $GITHUB_ENV
+
+      - name: Get Second Service Addresses and Test load balancing
+        run: |
+          SECOND_SERVICE_ADRESSES=()
+          for i in {1..15}; do
+          SECOND_SERVICE_ADRESSES_DATA=$(curl -s http://localhost:18888 | grep -E -o "([0-9]{1,3}\.){1,3}[[:digit:]]{1,3}")
+          if [[ -n "$SECOND_SERVICE_ADRESSES_DATA" ]] && ! [[ "${SECOND_SERVICE_ADRESSES[@]}" =~ "$SECOND_SERVICE_ADRESSES_DATA" ]]; then
+          SECOND_SERVICE_ADRESSES+=("$SECOND_SERVICE_ADRESSES_DATA")
+          fi
+          sleep 1
+          done
+          echo "IP adresses for second service: ${SECOND_SERVICE_ADRESSES[@]}"
+          
+          SECOND_IP_COUNT=${#SECOND_SERVICE_ADRESSES[@]}
+          echo "Number of unique second service address values: $SECOND_IP_COUNT"
+          echo "SECOND_IP_COUNT=${SECOND_IP_COUNT}" >> $GITHUB_ENV    
+
+      - name: Check if both of services consist of two ip adresses. One must be unique, the second must match the address of the other service.
+        run: |
+          if [[ "${{ env.FIRST_IP_COUNT }}" == "2" ]] && [[ "${{ env.SECOND_IP_COUNT }}" == "2" ]]; then
+          echo "The load balancing is shared between two services"
+          else
+          echo "The loadbalancing is not shared between two services"
+          exit 1
+          fi
+          
+          MATCHING_ADDRESSES=()
+          for ADDR1 in "${FIRST_SERVICE_ADDRESSES[@]}"; do
+          for ADDR2 in "${SECOND_SERVICE_ADDRESSES[@]}"; do
+          if [[ "$ADDR1" == "$ADDR2" ]]; then
+          MATCHING_ADDRESSES+=("$ADDR1")
+          fi
+          done
+          done
+          
+          if [[ $MATCHING_COUNT -eq 0 ]]; then
+          echo "No matching addresses found. Exiting with status 1."
+          exit 1
+          else
+          echo "Matching count: $MATCHING_COUNT
+          echo "Matching addresses: ${MATCHING_ADDRESSES[@]}"
+          fi
+
