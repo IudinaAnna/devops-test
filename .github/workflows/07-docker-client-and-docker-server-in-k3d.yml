@@ -1,0 +1,49 @@
+name: K-07 Dind client and server in k3d
+on:
+  push:
+    paths:
+      - 'kubernetes/07-docker-client-and-docker-server-in-k3d/**'
+      - '.github/workflows/07-docker-client-and-docker-server-in-k3d.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup k3d
+        uses: nolar/setup-k3d-k3s@v1
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Verify Kubernetes installation
+        run: k3d --version
+
+      - name: Create cluster with registry
+        run: k3d cluster create demo-cluster --registry-create demo-registry:12345
+
+      - name: Apply the service manifest
+        run: kubectl apply -f ./kubernetes/07-docker-client-and-docker-server-in-k3d/manifests/service.yml
+
+      - name: Apply the deployment manifest
+        run: kubectl apply -f ./kubernetes/07-docker-client-and-docker-server-in-k3d/manifests/deployment.yml
+
+      - name: Wait for pods to be ready
+        run: ./wait_status_code_and_logs.sh 'kubectl wait deployment -n default 07-client-and-server --for=condition=Available'
+
+      - name: Add port to cluster
+        run: k3d cluster edit demo-cluster --port-add 14999:8092@loadbalancer
+
+      - name: Check connection to nginx
+        run: |
+          curl localhost:14999
+          HTTP_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" localhost:14999)
+          if [[ "$HTTP_RESPONSE" -eq 200 ]]; then
+          echo "Successfully connected to nginx. Status code:$HTTP_RESPONSE "
+          else
+          echo "Error: Status code: $HTTP_RESPONSE"
+          exit 1
+          fi
