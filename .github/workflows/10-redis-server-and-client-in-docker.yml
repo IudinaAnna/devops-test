@@ -45,7 +45,7 @@ jobs:
 
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir ./docker/10-redis-server_and_client-in-docker/report
+          mkdir ./docker/10-redis-server-and-client-in-docker/report
           if [ -d "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report" ]; then
           echo "Data folder was created"
           ls ./docker/10-redis-server-and-client-in-docker
