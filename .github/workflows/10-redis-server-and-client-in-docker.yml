@@ -12,6 +12,7 @@ env:
   EXPECTED_OUTPUT: "Anna"
   CONTAINER_STATUS: "running"
   REPORT_FOLDER: "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report"
+  SRC_FOLDER: "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/src"
 
 jobs:
   build:
@@ -55,13 +56,17 @@ jobs:
           echo "Data folder is not created"
           exit 1
           fi
-
-      - name: Build, tag and push the image
-        run: |
-          docker build -t 10-redis-client-and-server-in-docker:0.1  \
-          --build-arg USER_ID=${{ env.BUILD_USER_ID }} \
-          --build-arg GROUP_ID=${{ env.BUILD_GROUP_ID }} \
-          ./docker/10-redis-server-and-client-in-docker/src
+      
+      - name: Build the image
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile
+          push: false
+          tags: 10-redis-client-and-server-in-docker:0.1
+          build-args: |
+            BUILD_USER_ID
+            BUILD_GROUP_ID
 
       - name: Run redis-server
         run: |
@@ -102,12 +107,12 @@ jobs:
         uses: mxschmitt/action-tmate@v3.11
 
       - name: Check if dump.rdb file was created successfully
-        run: ./wait_status_code_and_logs.sh  'cat "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report/dump.rdb"'
+        run: ./wait_status_code_and_logs.sh  'cat ${{ env.REPORT_FOLDER }}/dump.rdb'
 
       - name: Get the key
         run: |
           docker run -d --name my-redis-container redis:alpine3.18
-          docker cp ./docker/10-redis-server-and-client-in-docker/report/dump.rdb my-redis-container:/data
+          docker cp $REPORT_FOLDER/dump.rdb my-redis-container:/data
           docker stop my-redis-container
           docker start my-redis-container
           GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
