@@ -59,7 +59,7 @@ jobs:
           docker build -t 10-redis-client-and-server-in-docker:0.1  \
           --build-arg USER_ID=${{ env.BUILD_USER_ID }} \
           --build-arg GROUP_ID=${{ env.BUILD_GROUP_ID }} \
-          ./docker/10-redis-client-and-server-in-docker/src
+          ./docker/10-redis-server-and-client-in-docker/src
 
       - name: Run redis-server
         run: |
