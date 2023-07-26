@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.springBootApp.name }}
+  labels: 
+    component: {{ .Values.springBootApp.name }}
+spec:
+  selector:
+    matchLabels:
+      component: {{ .Values.springBootApp.name }}
+  template:
+    metadata:
+      labels:
+        component: {{ .Values.springBootApp.name }}
+    spec:
+      containers:
+      - name: {{ .Values.springBootApp.name }}
+        envFrom: 
+          - configMapRef: 
+              name: {{.Values.configmap.name }}
+        env:
+          - name: DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secret.name}}
+                key: POSTGRES_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secret.name}}
+                key: POSTGRES_PASSWORD
+          - name: DB_URL
+            value: $(DB_HOST):$(DB_PORT)/$(DB_NAME)    
+        image: {{.Values.springBootApp.image}}  
+        imagePullPolicy: IfNotPresent  
+        command: ["/bin/sh", "-c"]
+        args: ["dockerize -wait tcp://$(DB_HOST):$(DB_PORT) -timeout 30s java -jar api.jar && sleep infinity"]
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+        livenessProbe:
+            initialDelaySeconds: 120
+            periodSeconds: 120
+            timeoutSeconds: 15
+            httpGet:
+              path: /
+              port: http
+        readinessProbe:
+            initialDelaySeconds: 100
+            periodSeconds: 15
+            timeoutSeconds: 15
+            httpGet:
+              path: /
+              port: http
+

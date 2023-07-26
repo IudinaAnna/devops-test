@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.postgresql.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.postgresql.name }} 
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.postgresql.name }}
+    spec:
+      containers:
+      - name: {{ .Values.postgresql.name }}
+        image: {{ .Values.postgresql.server.image}} 
+        env: 
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secret.name }}
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secret.name }}
+                key: POSTGRES_PASSWORD
+          - name: POSTGRES_DB  
+            valueFrom: 
+              configMapKeyRef: 
+                name: {{ .Values.configmap.name}}
+                key: DB_NAME             
+          - name: PGDATA
+            valueFrom: 
+              configMapKeyRef: 
+                name: {{ .Values.configmap.name}}
+                key: PGDATA           
+        ports:
+          - containerPort: 5432
+        volumeMounts:
+          - name: postgredb-data 
+            mountPath: /var/lib/postgresql/data
+        readinessProbe:
+          exec:
+            command: ["/bin/sh", "-c", "pg_isready -U '${POSTGRES_USER}' -d '${POSTGRES_DB}'"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command: ["/bin/sh", "-c", "pg_isready -U '${POSTGRES_USER}' -d '${POSTGRES_DB}'"]
+          initialDelaySeconds: 60
+          periodSeconds: 10       
+      volumes:
+        - name: postgredb-data 
+          hostPath:
+            path: /databasevolume
+
