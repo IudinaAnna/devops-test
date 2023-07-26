@@ -104,7 +104,7 @@ jobs:
       - name: Check HTTP status of pgadmin and springboot sites. Expected resault of pgadmin- 404
         uses: lakuapik/gh-actions-http-status@v1
         with:
-          sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app","http://localhost:16999/login"]'
+          sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app","http://localhost:${{ env.SPRINGBOOT_PORT }}/login"]'
           expected: '[404,200]'
 
       - name: Verify that the connection to postgres is successful
