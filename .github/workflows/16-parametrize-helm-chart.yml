@@ -94,14 +94,14 @@ jobs:
         run: |
           ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db'
 
-      - name: Install helm chart `my-chart` for prodaction version. Expected - pgadmin was not applied
+      - name: Install helm chart `my-chart` for prodaction version - without pgadmin
         run: |
-          ./wait_status_code_and_logs.sh 'helm uninstall ${CHART_FOLDER} -n test'
+          helm uninstall ${CHART_FOLDER} -n test
           helm upgrade --install --cleanup-on-fail my-chart \
           ${CHART_FOLDER} --namespace test --create-namespace \
           --set service.type=LoadBalancer --set pgadmin.enabled=false --wait 
 
-      - name: Check HTTP status of pgadmin and springboot sites
+      - name: Check HTTP status of pgadmin and springboot sites. Expected resault of pgadmin- 404
         uses: lakuapik/gh-actions-http-status@v1
         with:
           sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app","http://localhost:16999/login"]'
