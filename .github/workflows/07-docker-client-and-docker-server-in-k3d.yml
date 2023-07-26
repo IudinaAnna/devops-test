@@ -44,5 +44,5 @@ jobs:
       - name: Check HTTP status of nginx site
         uses: lakuapik/gh-actions-http-status@v1
         with:
-          sites: '["http://localhost:14999"]'
+          sites: '["http://localhost:14999/app"]'
           expected: '[200]'   
