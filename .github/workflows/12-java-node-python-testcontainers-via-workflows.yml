@@ -104,7 +104,7 @@ jobs:
           JAVA_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/java/reports/tests/test/index.html"
           ./wait_status_code_and_logs.sh "ls $JAVA_REPORT"
           cat $JAVA_REPORT
-          if grep -o "Success" $java_report; then
+          if grep -o "Success" $JAVA_REPORT; then
           echo "  The testcontainers-java build was successful"
           else
           echo "  The testcontainers-java build was failed"
@@ -116,7 +116,7 @@ jobs:
           PYTHON_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/python/report.html"
           ./wait_status_code_and_logs.sh "ls $PYTHON_REPORT"
           cat $PYTHON_REPORT
-          if grep -q "2 passed" $python_report; then
+          if grep -q "2 passed" $PYTHON_REPORT; then
           echo "  The testcontainers-python build was successful"
           else
           echo "  The testcontainers-python build was failed"
@@ -128,7 +128,7 @@ jobs:
           NODE_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/node/index.html"
           ./wait_status_code_and_logs.sh "ls $NODE_REPORT"
           cat $NODE_REPORT
-          if grep -q "4 passed" $node_report; then
+          if grep -q "4 passed" $NODE_REPORT; then
           echo "  The testcontainers-node build was successful"
           else
           echo "  The testcontainers-node build was failed"
