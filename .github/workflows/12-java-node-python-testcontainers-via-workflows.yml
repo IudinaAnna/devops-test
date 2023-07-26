@@ -98,7 +98,7 @@ jobs:
 
       - name: Check if java build was successful and reports are available in report folder
         run: |
-          node-report="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/java/reports/tests/test/index.html"
+          java-report="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/java/reports/tests/test/index.html"
           ./wait_status_code_and_logs.sh "ls $java-report"
           cat $java-report
           if grep -o "Success" $java_report; then
