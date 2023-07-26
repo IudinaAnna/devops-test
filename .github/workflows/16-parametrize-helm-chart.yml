@@ -114,7 +114,13 @@ jobs:
           
       - name: Check pgadmin site 
         run: |
-          if curl -s http://localhost:${{ env.PGADMIN_PORT }}/login | grep -q "(52) Empty reply from server"; then
+          if ! curl -s http://localhost:${{ env.PGADMIN_PORT }}/login >/dev/null; then
+          exit_code=$?
+          if [ $exit_code -eq 52 ]; then
           echo "pgAdmin does not exist."
+          else
+          echo "Unexpected error occurred with curl. Exit code: $exit_code"
+          exit 1
+          fi
           fi
 
