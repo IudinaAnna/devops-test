@@ -6,7 +6,7 @@ on:
       - '.github/workflows/13-create-3-deployments-with-2-services.yml'
       - 'kubernetes/13-create-3-deployments-with-2-services/**'
 env:
-  MANIFESTS_FOLDER: "${{ github.workspace }}/kubernetes/13-create-3-deployments-with-2-services/manifests"
+  MANIFESTS_FOLDER: "${{ github.workspace }}/kubernetes/13-create-3-deployments-with-2-services"
 
 jobs:
   build:
