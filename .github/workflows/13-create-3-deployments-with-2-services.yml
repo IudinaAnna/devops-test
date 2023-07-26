@@ -6,7 +6,7 @@ on:
       - '.github/workflows/13-create-3-deployments-with-2-services.yml'
       - 'kubernetes/13-create-3-deployments-with-2-services/**'
 env:
-  MANIFESTS-FOLDER: "${{ github.workspace }}/kubernetes/13-create-3-deployments-with-2-services/manifests"
+  MANIFESTS_FOLDER: "${{ github.workspace }}/kubernetes/13-create-3-deployments-with-2-services/manifests"
 
 jobs:
   build:
@@ -43,14 +43,14 @@ jobs:
 
       - name: Apply services manifests
         run: |
-          kubectl apply -f ${{ env.MANIFESTS }}/service1.yml
-          kubectl apply -f ${{ env.MANIFESTS }}/service2.yml
+          kubectl apply -f ${{ env.MANIFESTS_FOLDER }}/service1.yml
+          kubectl apply -f ${{ env.MANIFESTS_FOLDER }}/service2.yml
 
       - name: Apply deployments manifests
         run: |
-          kubectl apply -f ${{ env.MANIFESTS }}/deployment1.yml
-          kubectl apply -f ${{ env.MANIFESTS }}/deployment2.yml
-          kubectl apply -f ${{ env.MANIFESTS }}/deployment3.yml
+          kubectl apply -f ${{ env.MANIFESTS_FOLDER }}/deployment1.yml
+          kubectl apply -f ${{ env.MANIFESTS_FOLDER }}/deployment2.yml
+          kubectl apply -f ${{ env.MANIFESTS_FOLDER }}/deployment3.yml
 
       - name: Wait for pods to be ready
         run: |
