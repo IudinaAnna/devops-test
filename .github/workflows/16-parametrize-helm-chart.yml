@@ -84,11 +84,25 @@ jobs:
           ${CHART_FOLDER} --namespace test --create-namespace \
           --set service.type=LoadBalancer --set pgadmin.enabled=false --wait 
 
-      - name: Check HTTP status of pgadmin and springboot sites. Expected resault of pgadmin- 404
-        uses: lakuapik/gh-actions-http-status@v1
-        with:
-          sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app","http://localhost:${{ env.SPRINGBOOT_PORT }}/login"]'
-          expected: '[404,200]'
+#       - name: Check HTTP status of pgadmin and springboot sites. Expected resault of pgadmin- 404
+#         uses: lakuapik/gh-actions-http-status@v1
+#         with:
+#           sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app","http://localhost:${{ env.SPRINGBOOT_PORT }}/login"]'
+#           expected: '[404,200]'
 
+      - name: Check site for status code
+        uses: pavelsaman/website-check@v2.3
+        with:
+          url: http://localhost:${{ env.PGADMIN_PORT }}
+          status_code: 200
+          redirect: true
+      
+      - name: Check site for status code
+        uses: pavelsaman/website-check@v2.3
+        with:
+          url: http://localhost:${{ env.SPRINGBOOT_PORT }}
+          status_code: 200
+          redirect: true
+          
       - name: Verify that the connection to postgres is successful
         run: ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db'
