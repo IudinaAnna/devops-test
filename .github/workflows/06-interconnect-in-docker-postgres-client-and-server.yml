@@ -51,7 +51,7 @@ jobs:
           --network demo-network \
           --network-alias psql-client \
           postgres:latest \
-          psql postgresql://postgres:pass123@postgres-alias:5432
+          psql postgresql://aiudina:123@postgres-alias:5432
           
           \q
           echo "The connection between psql-server and psql-client is successful"
