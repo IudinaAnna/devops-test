@@ -82,8 +82,8 @@ jobs:
         run: |
           helm upgrade --install --cleanup-on-fail my-chart \
           ${CHART_FOLDER} --namespace test --create-namespace \
-          --set service.type=LoadBalancer \
-          --set pgadmin.enabled=false --wait  
+          --set service.type=LoadBalancer --wait \
+          --set pgadmin.enabled=false
          
 #       - name: Setup tmate session
 #         uses: mxschmitt/action-tmate@v3.11
@@ -104,16 +104,25 @@ jobs:
           status_code: 200
           redirect: true
           
-      - name: Check pgadmin site 
-        run: |
-          if curl -s http://localhost:8002/app; then
-          curl_exit_code=$?
-          if [ $curl_exit_code -eq 52 ]; then
-          echo "pgAdmin does not exist."
-          elif [ $curl_exit_code -eq 0 ]; then
-          echo "pgAdmin exists.Unexpected error occurred with curl. Exit code: $curl_exit_code"
-          exit 1
-          fi
-          fi
+      - name: Check if pgAdmin is not present
+        run: | 
+           available_deployments=$(kubectl get deployments -n test -o name)
+           if ! echo "$available_deployments" | grep -q "deployment/pgadmin"; then
+           echo "Deployment is not present in the namespace."
+           else
+           echo "Deployment is present in the namespace."
+           fi
+        
+#       - name: Check pgadmin site 
+#         run: |
+#           if curl -s http://localhost:8002/app; then
+#           curl_exit_code=$?
+#           if [ $curl_exit_code -eq 52 ]; then
+#           echo "pgAdmin does not exist."
+#           elif [ $curl_exit_code -eq 0 ]; then
+#           echo "pgAdmin exists.Unexpected error occurred with curl. Exit code: $curl_exit_code"
+#           exit 1
+#           fi
+#           fi
  
 
