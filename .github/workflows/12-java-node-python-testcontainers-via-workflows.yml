@@ -95,7 +95,10 @@ jobs:
       - name: Apply manifest
         run: |
           kubectl apply -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/manifests
-
+      
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3.11
+        
       - name: Check if java build was successful and reports are available in report folder
         run: |
           java-report="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/java/reports/tests/test/index.html"
