@@ -1,0 +1,83 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: argo-jpn
+spec:
+  entrypoint: jpn-test
+  volumes:
+    - name: data-info
+      hostPath:
+        path: /report
+  templates:
+    - name: jpn-test
+      steps:
+        - - name: node-test
+            template: node
+          - name: python-test
+            template: python
+          - name: java-test
+            template: java
+    - name: node
+      container:
+        image: demo-registry:5000/12-node-testcontainers-via-workflows:0.1
+        command: ["/bin/sh", "-c"]
+        args: ["dockerize -wait tcp://127.0.0.1:2375 -timeout 30s npm test postgresql-container.test.ts && cp -r /app/jest-test-report /app/report/node && chown -R $USER_ID:$GROUP_ID /app/report/node && sleep infinity"]
+        env:
+          - name: DOCKER_HOST
+            value: tcp://127.0.0.1:2375
+        volumeMounts:
+          - name: data-info
+            mountPath: /app/report
+      sidecars:
+        - name: dind
+          image: docker:23.0.1-dind-alpine3.17
+          command: [dockerd-entrypoint.sh]
+          securityContext:
+            privileged: true
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+    - name: python
+      container:
+        image: demo-registry:5000/12-python-testcontainers-via-workflows:0.1
+        command: ["/bin/sh", "-c"]
+        args: ["dockerize -wait tcp://127.0.0.1:2375 -timeout 30s pytest -s --html=/app/report/report.html && cp -r /app/report /python/python && chown -R $USER_ID:$GROUP_ID /python/python && sleep infinity"]
+        env:
+          - name: DOCKER_HOST
+            value: tcp://127.0.0.1:2375
+        volumeMounts:
+          - name: data-info
+            mountPath: /python
+      sidecars:
+        - name: dind
+          image: docker:23.0.1-dind-alpine3.17
+          command: [dockerd-entrypoint.sh]
+          securityContext:
+            privileged: true
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+    - name: java
+      container:
+        image: demo-registry:5000/12-java-testcontainers-via-workflows:0.1
+        command: ["/bin/sh", "-c"]
+        args: ["dockerize -wait tcp://127.0.0.1:2375 -timeout 30s gradle test && cp -r /app/examples/redis-backed-cache-testng/build /java/java && chown -R $USER_ID:$GROUP_ID /java/java && sleep infinity"]
+        env:
+          - name: DOCKER_HOST
+            value: tcp://127.0.0.1:2375
+          - name: TESTCONTAIENRS_RYUK_DISABLED
+            value: "true"
+          - name: TESTCONTAINERS_CHECKS_DISABLE
+            value: "true"
+        volumeMounts:
+          - name: data-info
+            mountPath: /java
+      sidecars:
+        - name: dind
+          image: docker:23.0.1-dind-alpine3.17
+          command: [dockerd-entrypoint.sh]
+          securityContext:
+            privileged: true
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""

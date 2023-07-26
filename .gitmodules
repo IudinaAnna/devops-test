@@ -1,0 +1,9 @@
+[submodule "submodules/testcontainers-java"]
+	path = submodules/testcontainers-java
+	url = https://github.com/testcontainers/testcontainers-java.git
+[submodule "submodules/testcontainers-node"]
+	path = submodules/testcontainers-node
+	url = https://github.com/testcontainers/testcontainers-node.git
+[submodule "submodules/testcontainers-python"]
+	path = submodules/testcontainers-python
+	url = https://github.com/testcontainers/testcontainers-python.git
