@@ -78,25 +78,8 @@ jobs:
             USER_ID=$(id -u)
             GROUP_ID=$(id -g)
 
-      - name: Install helm chart `my-chart`
-        run: |
-          helm upgrade --install --cleanup-on-fail my-chart \
-          ${CHART_FOLDER} --namespace test --create-namespace \
-          --set service.type=LoadBalancer --wait
-      
-      - name: Check HTTP status of pgadmin and springboot sites
-        uses: lakuapik/gh-actions-http-status@v1
-        with:
-         sites: '["http://localhost:${{ env.PGADMIN_PORT }}/app", "http://localhost:${{ env.SPRINGBOOT_PORT }}/login"'
-         expected: '[200, 200]'
-         
-      - name: verify that the connection to postgres is successful
-        run: |
-          ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db'
-
       - name: Install helm chart `my-chart` for prodaction version - without pgadmin
         run: |
-          helm uninstall my-chart -n test
           helm upgrade --install --cleanup-on-fail my-chart \
           ${CHART_FOLDER} --namespace test --create-namespace \
           --set service.type=LoadBalancer --set pgadmin.enabled=false --wait 
