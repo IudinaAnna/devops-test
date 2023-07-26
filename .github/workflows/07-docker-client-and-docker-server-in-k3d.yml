@@ -8,6 +8,7 @@ on:
 
 env: 
   PORT: "14999"
+  MANIFESTS_FOLDER: "${{ github.workspace }}/kubernetes/07-docker-client-and-docker-server-in-k3d/manifests"
 
 jobs:
   build:
@@ -30,35 +31,25 @@ jobs:
         run: k3d cluster create demo-cluster --registry-create demo-registry:12345
 
       - name: Apply the service manifest
-        run: kubectl apply -f ${{ github.workspace }}/kubernetes/07-docker-client-and-docker-server-in-k3d/manifests/service.yml
+        run: kubectl apply -f ${{ env.MANIFESTS_FOLDER }}/service.yml
 
       - name: Apply the deployment manifest
-        run: kubectl apply -f ${{ github.workspace }}/kubernetes/07-docker-client-and-docker-server-in-k3d/manifests/deployment.yml
+        run: kubectl apply -f ${{ env.MANIFESTS_FOLDER }}/deployment.yml
 
       - name: Wait for pods to be ready
         run: ./wait_status_code_and_logs.sh 'kubectl wait deployment -n default 07-client-and-server --for=condition=Available'
 
       - name: Add port to cluster
         run: k3d cluster edit demo-cluster --port-add ${{ env.PORT }}:8092@loadbalancer
-
-#       - name: Setup tmate session
-#         uses: mxschmitt/action-tmate@v3.11    
-      
+        
       - name: Check curl 
         run: |
           ./wait_status_code_and_logs.sh 'curl -i http://localhost:${{ env.PORT }}'
-          curl -i http://localhost:${{ env.PORT }}
-          sleep 15
-          
-#       - name: Check HTTP status of nginx site
-#         uses: lakuapik/gh-actions-http-status@v1
-#         with:
-#           sites: '["http://localhost:14999/html"]'
-#           expected: '[200]'   
+          curl -i http://localhost:${{ env.PORT }}  
  
       - name: Check site for status code
         uses: pavelsaman/website-check@v2.3
         with:
-          url: http://localhost:14999
+          url: http://localhost:${{ env.PORT }}  
           status_code: 200
           redirect: true
