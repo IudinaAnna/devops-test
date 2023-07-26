@@ -106,8 +106,7 @@ jobs:
         
       - name: Check pgadmin site 
         run: |
-          curl http://localhost:${{ env.PGADMIN_PORT }}/login
-          if curl -s http://localhost:${{ env.PGADMIN_PORT }}/login | grep -q "empty reply from server"; then
+          if curl -s http://localhost:${{ env.PGADMIN_PORT }}/login | grep -q "(52) Empty reply from server"; then
           echo "pgAdmin does not exist."
           else
           echo "Error"
