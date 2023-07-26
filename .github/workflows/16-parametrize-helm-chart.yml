@@ -3,13 +3,13 @@ name: K-16 Parametrize Helm Chart
 on:
   push:
     paths:
-      - '.github/workflows/15-create-helm-chart.yml'
-      - 'kubernetes/15-create-helm-chart/**'
+      - '.github/workflows/16-parametrize-helm-chart.yml'
+      - 'kubernetes/16-parametrize-helm-chart/**'
 env:
   SPRINGBOOT_PORT: "8002"
   PGADMIN_PORT: "8001"
-  PSQL_PORT: "7432"
-  SRC_FOLDER: "${{ github.workspace }}/kubernetes/15-create-helm-chart/springboot-api-rest-example/api"
+  PSQL_PORT: "6432"
+  SRC_FOLDER: "${{ github.workspace }}/kubernetes/16-parametrize-helm-chart/springboot-api-rest-example/api"
 
 jobs:
   build:
@@ -34,7 +34,7 @@ jobs:
 
       - name: Check working directory
         run: |
-          if [ -d "${{ github.workspace }}/kubernetes/15-create-helm-chart" ]; then
+          if [ -d "${{ github.workspace }}/kubernetes/16-parametrize-helm-chart" ]; then
           echo "Directory exists"
           else
           echo "Directory does not exist"
@@ -50,8 +50,8 @@ jobs:
       - name: Initialize and update submodule
         run: |
           git submodule update --init --recursive submodules/springboot-api-rest-example
-          cp -r ./submodules/springboot-api-rest-example ./kubernetes/15-create-helm-chart
-          if [ -d "./kubernetes/15-create-helm-chart/springboot-api-rest-example" ]; then
+          cp -r ./submodules/springboot-api-rest-example ./kubernetes/16-parametrize-helm-chart
+          if [ -d "./kubernetes/16-parametrize-helm-chart/springboot-api-rest-example" ]; then
           echo "Submodule directory exists"
           else
           echo "Submodule directory does not exist"
@@ -88,7 +88,7 @@ jobs:
       - name: Install helm chart `my-chart`
         run: |
           helm upgrade --install --cleanup-on-fail my-chart \
-          ./kubernetes/15-create-helm-chart/my-chart --namespace test --create-namespace \
+          ./kubernetes/16-parametrize-helm-chart/my-chart --namespace test --create-namespace \
           --set service.type=LoadBalancer --wait
 
       - name: Check site for status code
@@ -111,16 +111,10 @@ jobs:
 
       - name: Install helm chart `my-chart` for prodaction version. Expected - pgadmin was not applied
         run: |
+          helm uninstall ./kubernetes/15-create-helm-chart/my-chart -n test
           helm upgrade --install --cleanup-on-fail my-chart \
           ./kubernetes/15-create-helm-chart/my-chart --namespace test --create-namespace \
           --set service.type=LoadBalancer --set pgadmin.enabled=false --wait 
-            
-            #       - name: Setup tmate session
-            #         uses: mxschmitt/action-tmate@v3.11
-
-      - name: Forward the host port by spring-boot to the port, which are listening by the service
-        run: |
-          k3d cluster edit demo-cluster --port-add 16999:8080@loadbalancer
 
       - name: Check HTTP status of pgadmin and springboot sites
         uses: lakuapik/gh-actions-http-status@v1
@@ -129,7 +123,4 @@ jobs:
           expected: '[200]'
 
       - name: Verify that the connection to postgres is successful
-        run: |
-          sudo apt update
-          sudo apt install postgresql
-          psql -h localhost -U md_aiudina -d check-db
+        run: ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db'
