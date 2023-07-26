@@ -11,7 +11,7 @@ env:
   BUILD_GROUP_ID: "$(id -g)"
   EXPECTED_OUTPUT: "Anna"
   CONTAINER_STATUS: "running"
-  REPORT_FOLDER: "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report"
+  REPORT_FOLDER: "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report"
 
 jobs:
   build:
@@ -45,12 +45,12 @@ jobs:
           echo " "redisNetwork" network was created successfully"
           fi
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3.11
+#       - name: Setup tmate session
+#         uses: mxschmitt/action-tmate@v3.11
       
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir ${{ env.REPORT_FOLDER }}
+          mkdir $REPORT_FOLDER
           if [ -d "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report" ]; then
           echo "Data folder was created"
           ls ./docker/10-redis-server-and-client-in-docker
