@@ -1,4 +1,5 @@
 name: D-06 Interconnection in Docker Postgres Client Sand Server
+
 on:
   push:
     paths:
@@ -47,7 +48,7 @@ jobs:
           fi
       - name: Run postgres-client
         run: |
-          ./wait_status_code_and_logs.sh 'docker run --rm --name postgres_client --network demo-network --network-alias psql-client postgres:latest psql postgresql://postgres:pass123@postgres-alias:5432'
+          ./wait_status_code_and_logs.sh 'docker run --rm --name postgres_client --network demo-network --network-alias psql-client postgres:latest psql postgresql://aiudina:pass123@postgres-alias:5432'
           
           \q
           echo "The connection between psql-server and psql-client is successful"
