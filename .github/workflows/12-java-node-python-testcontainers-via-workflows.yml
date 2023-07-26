@@ -69,64 +69,28 @@ jobs:
           build-args: |
             USER_ID=$(id -u)
             GROUP_ID=$(id -g)
-          
-#       - name: Build, tag and push `12-java-testcontainers-via-workflows:0.1` image
-#         run: |
-#           docker build -t 12-java-testcontainers-via-workflows:0.1 \
-#           --build-arg USER_ID=$(id -u) \
-#           --build-arg GROUP_ID=$(id -g) \
-#           -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.java \
-#           ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/
-          
-#           docker tag 12-java-testcontainers-via-workflows:0.1 localhost:12345/12-java-testcontainers-via-workflows:0.1
-          
-#           docker push localhost:12345/12-java-testcontainers-via-workflows:0.1
 
       - name: Build, tag and push the python image
         uses: docker/build-push-action@v4
         with:
-          context: $SRC_FOLDER
-          file: $SRC_FOLDER/Dockerfile.python
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.python
           push: true
           tags: localhost:12345/12-python-testcontainers-via-workflows:0.1
           build-args: |
             USER_ID=$(id -u)
             GROUP_ID=$(id -g) 
-            
-#       - name: Build, tag and push `12-python-testcontainers-via-workflows:0.1` image
-#         run: |
-#           docker build -t 12-python-testcontainers-via-workflows:0.1 \
-#           --build-arg USER_ID=$(id -u) \
-#           --build-arg GROUP_ID=$(id -g) \
-#           -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.python \
-#           ./kubernetes/12-java-node-python-testcontainers-via-workflows/src
-          
-#           docker tag 12-python-testcontainers-via-workflows:0.1 localhost:12345/12-python-testcontainers-via-workflows:0.1
-          
-#           docker push localhost:12345/12-python-testcontainers-via-workflows:0.1
 
       - name: Build, tag and push the python image
         uses: docker/build-push-action@v4
         with:
-          context: $SRC_FOLDER
-          file: $SRC_FOLDER/Dockerfile.node
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.node
           push: true
           tags: localhost:12345/12-node-testcontainers-via-workflows:0.1
           build-args: |
             USER_ID=$(id -u)
             GROUP_ID=$(id -g)
-            
-#       - name: Build, tag and push `12-node-testcontainers-via-workflows:0.1` image
-#         run: |
-#           docker build -t 12-node-testcontainers-via-workflows:0.1 \
-#           --build-arg USER_ID=$(id -u) \
-#           --build-arg GROUP_ID=$(id -g) \
-#           -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/Dockerfile.node \
-#           ./kubernetes/12-java-node-python-testcontainers-via-workflows/src/
-          
-#           docker tag 12-node-testcontainers-via-workflows:0.1 localhost:12345/12-node-testcontainers-via-workflows:0.1
-          
-#           docker push localhost:12345/12-node-testcontainers-via-workflows:0.1
 
       - name: Apply manifest
         run: |
