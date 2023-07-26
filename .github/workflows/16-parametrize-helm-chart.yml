@@ -103,12 +103,14 @@ jobs:
           url: http://localhost:${{ env.SPRINGBOOT_PORT }}/app
           status_code: 200
           redirect: true
-          
-
-      - name: Check site for status code
-        uses: pavelsaman/website-check@v2.3
-        with:
-          url: http://localhost:${{ env.PGADMIN_PORT }}/login
-          status_code: 404
-          redirect: true
+        
+      - name: Check pgadmin site 
+        run: |
+          curl http://localhost:${{ env.PGADMIN_PORT }}/login
+          if curl -s http://localhost:${{ env.PGADMIN_PORT }}/login | grep -q "empty reply from server"; then
+          echo "pgAdmin does not exist."
+          else
+          echo "Error"
+          exit 1
+          fi
 
