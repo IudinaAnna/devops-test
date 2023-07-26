@@ -106,7 +106,7 @@ jobs:
           
       - name: Check pgadmin site 
         run: |
-          if ! curl -s http://localhost:8001/login >/dev/null; then
+          if ! curl -s http://localhost:8002/app >/dev/null; then
           exit_code=$?
           if [ $exit_code -eq 0 ]; then
           echo "pgAdmin does not exist."
