@@ -48,8 +48,8 @@ jobs:
       
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir $REPORT_FOLDER
-          if [ -d $REPORT_FOLDER ]; then
+          mkdir ${REPORT_FOLDER}
+          if [ -d ${REPORT_FOLDER} ]; then
           echo "Data folder was created"
           ls ./docker/10-redis-server-and-client-in-docker
           else
@@ -71,7 +71,7 @@ jobs:
       - name: Run redis-server
         run: |
           docker run -d --name redis-server --network redisNetwork \
-          --mount type=bind,source=$REPORT_FOLDER,target=/data \
+          --mount type=bind,source=${REPORT_FOLDER},target=/data \
           10-redis-client-and-server-in-docker:0.1 
           
           SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-server )
@@ -103,16 +103,17 @@ jobs:
 
       - name: Set key using Redis CLI
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3.11
+        
+#       - name: Setup tmate session
+#         uses: mxschmitt/action-tmate@v3.11
 
       - name: Check if dump.rdb file was created successfully
-        run: ./wait_status_code_and_logs.sh  'cat ${{ env.REPORT_FOLDER }}/dump.rdb'
+        run: ./wait_status_code_and_logs.sh  'cat ${REPORT_FOLDER}/dump.rdb'
 
       - name: Get the key
         run: |
           docker run -d --name my-redis-container redis:alpine3.18
-          docker cp $REPORT_FOLDER/dump.rdb my-redis-container:/data
+          docker cp ${REPORT_FOLDER}/dump.rdb my-redis-container:/data
           docker stop my-redis-container
           docker start my-redis-container
           GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
@@ -129,9 +130,8 @@ jobs:
 
       - name: Check report folder rights
         run: |
-          folder_path="${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report"
-          user=$(stat -c '%U' $folder_path)
-          group=$(stat -c '%G' $folder_path)
+          user=$(stat -c '%U' $REPORT_FOLDER)
+          group=$(stat -c '%G' $REPORT_FOLDER)
           if [[ "$user" == "$(id -un)" && "$group" == "$(id -gn)" ]]; then
           echo "User=$user, $(id -un)"
           echo "Group=$group, $(id -gn)"
