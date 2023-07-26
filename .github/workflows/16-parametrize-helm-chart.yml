@@ -105,10 +105,10 @@ jobs:
           redirect: true
           
 
-#       - name: Check site for status code
-#         uses: pavelsaman/website-check@v2.3
-#         with:
-#           url: http://localhost:${{ env.PGADMIN_PORT }}/login
-#           status_code: 404
-#           redirect: true
+      - name: Check site for status code
+        uses: pavelsaman/website-check@v2.3
+        with:
+          url: http://localhost:${{ env.PGADMIN_PORT }}/login
+          status_code: 404
+          redirect: true
 
