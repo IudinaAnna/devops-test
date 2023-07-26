@@ -96,17 +96,25 @@ jobs:
           echo "Matching value for both services: $SECOND_SERVICE_ADRESSES_DATA"
           fi
           fi
-          
           sleep 1
           done
+          
           echo "IP adresses for second service: ${SECOND_SERVICE_ADRESSES[@]}"
+          
+          if [[ -z "${MATCHONG_COUNT[@]}" ]]; then
+          echo "No unique matching values found. Exiting..."
+          exit 1
+          fi
           
           SECOND_IP_COUNT=${#SECOND_SERVICE_ADRESSES[@]}
           echo "Number of unique second service address values: $SECOND_IP_COUNT"
           echo "SECOND_IP_COUNT=${SECOND_IP_COUNT}" >> $GITHUB_ENV    
-          
 
-      - name: Check if both of services consist of two ip adresses. One must be unique, the second must match the address of the other service.
+          MATCHONG_COUNT_VALUES=${#MATCHONG_COUNT[@]}
+          echo "Number of matching service address values: $MATCHONG_COUNT_VALUES"
+          echo "MATCHONG_COUNT_VALUES=${MATCHONG_COUNT_VALUES}" >> $GITHUB_ENV  
+          
+      - name: Check if both of services consist of two ip adresses. 
         run: |
           if [[ "${{ env.FIRST_IP_COUNT }}" == "2" ]] && [[ "${{ env.SECOND_IP_COUNT }}" == "2" ]]; then
           echo "The load balancing is shared between two services"
@@ -115,12 +123,12 @@ jobs:
           exit 1
           fi
           
-          if [[ -z "${MATCHONG_COUNT[@]}" ]]; then
-          echo "No unique matching values found. Exiting..."
+      - name: Check the number of matching values
+        run: |
+          if [[ "${{ env.MATCHONG_COUNT_VALUES }}" != "1" ]]; then
+          echo " Matching address: $MATCHONG_COUNT_VALUES"
+          echo "The loadbalancing is not working properly"
           exit 1
-          fi
-
-          MATCHONG_COUNT_VALUES=${#MATCHONG_COUNT[@]}
-          echo "Number of matching service address values: $MATCHONG_COUNT_VALUES"
-          echo "MATCHONG_COUNT_VALUES=${MATCHONG_COUNT_VALUES}" >> $GITHUB_ENV  
+          fi   
+          
 
