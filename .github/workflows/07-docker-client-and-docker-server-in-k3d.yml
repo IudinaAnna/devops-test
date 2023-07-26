@@ -50,8 +50,15 @@ jobs:
           curl -i http://localhost:${{ env.PORT }}
           sleep 15
           
-      - name: Check HTTP status of nginx site
-        uses: lakuapik/gh-actions-http-status@v1
+#       - name: Check HTTP status of nginx site
+#         uses: lakuapik/gh-actions-http-status@v1
+#         with:
+#           sites: '["http://localhost:14999/html"]'
+#           expected: '[200]'   
+ 
+      - name: Check site for status code
+        uses: pavelsaman/website-check@v2.3
         with:
-          sites: '["http://localhost:14999/html"]'
-          expected: '[200]'   
+          url: http://localhost:14999
+          status_code: 200
+          redirect: true
