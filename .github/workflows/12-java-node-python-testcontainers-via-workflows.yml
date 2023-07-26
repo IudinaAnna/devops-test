@@ -62,8 +62,8 @@ jobs:
       - name: Build, tag and push the java image
         uses: docker/build-push-action@v4
         with:
-          context: $SRC_FOLDER
-          file: $SRC_FOLDER/Dockerfile.java
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.java
           push: true
           tags: localhost:12345/12-java-testcontainers-via-workflows:0.1
           build-args: |
