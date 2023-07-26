@@ -10,7 +10,7 @@ env:
   EXPECTED_OUTPUT: "Anna"
   CONTAINER_STATUS: "running"
   REPORT_FOLDER: "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/report"
-
+  SRC_FOLDER: "${{ github.workspace }}/docker/10-redis-server-and-client-in-docker/src"
 jobs:
   build:
     runs-on: ubuntu-latest
