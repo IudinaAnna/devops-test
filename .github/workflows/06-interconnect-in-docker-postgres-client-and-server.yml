@@ -1,5 +1,4 @@
 name: D-06 Interconnection in Docker Postgres Client Sand Server
-
 on:
   push:
     paths:
