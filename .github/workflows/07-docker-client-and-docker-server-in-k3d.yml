@@ -47,9 +47,10 @@ jobs:
       - name: Check curl 
         run: |
           ./wait_status_code_and_logs.sh 'curl -i http://localhost:${{ env.PORT }}'
+          curl -i http://localhost:${{ env.PORT }}
           
       - name: Check HTTP status of nginx site
-        uses: lakuapik/gh-actions-http-status@v1
+        uses: fjogeleit/http-request-action@v1
         with:
-          sites: '["http://127.0.0.1:${{ env.PORT }}"]'
+          sites: '["http://localhost:${{ env.PORT }}"]'
           expected: '[200]'   
