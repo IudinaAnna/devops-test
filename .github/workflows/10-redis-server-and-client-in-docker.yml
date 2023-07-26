@@ -71,7 +71,7 @@ jobs:
       - name: Run redis-server
         run: |
           docker run -d --name redis-server --network redisNetwork \
-          --mount type=bind,source=${REPORT_FOLDER},target=/data \
+          --mount type=bind,source=${{ env.REPORT_FOLDER }},target=/data \
           10-redis-client-and-server-in-docker:0.1 
           
           SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-server )
