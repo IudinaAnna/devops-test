@@ -90,7 +90,7 @@ jobs:
         run: |
           kubectl apply -f ${TASK_FOLDER}/manifests
           POD_NAME="02-hello-world-python"
-          kubectl wait pod $POD_NAME --for=condition=Ready --timeout=20s
+          kubectl wait pod $POD_NAME --for=condition=Ready --timeout=30s
           POD_STATUS=$(kubectl get pod 02-hello-world-python -o jsonpath='{.status.phase}')
           echo "POD_STATUS=${POD_STATUS}" >> $GITHUB_ENV
 
