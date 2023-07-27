@@ -10,7 +10,7 @@ env:
   BUILD_GROUP_ID: "$(id -g)"
   EXPECTED_OUTPUT: "Anna"
   CONTAINER_STATUS: "running"
-  REPORT_FOLDER: "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report"
+  TASK_FOLDER: "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker"
 
 jobs:
   build:
@@ -23,19 +23,6 @@ jobs:
       - name: Verify Docker installation
         run: docker version
 
-      - name: Print current path
-        run: |
-          echo ${{ github.workspace }}
-
-      - name: Check if directory
-        run: |
-          if [ -d "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker" ]; then
-          echo "Directory exists"
-          else
-          echo "Directory does not exist"
-          exit 1
-          fi
-
       - name: Create network
         run: |
           docker network create redisNetwork
@@ -46,10 +33,10 @@ jobs:
 
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir ${REPORT_FOLDER}
-          if [ -d ${REPORT_FOLDER} ]; then
+          mkdir ${TASK_FOLDER}/report
+          if [ -d ${TASK_FOLDER}/report ]; then
           echo "Data folder was created"
-          ls ./docker/10-redis-client-and-server-in-docker
+          ls ${TASK_FOLDER}
           else
           echo "Data folder is not created"
           exit 1
@@ -60,13 +47,14 @@ jobs:
           docker build -t 10-redis-client-and-server-in-docker:0.1  \
           --build-arg USER_ID=${{ env.BUILD_USER_ID }} \
           --build-arg GROUP_ID=${{ env.BUILD_GROUP_ID }} \
-          ./docker/10-redis-client-and-server-in-docker/src
+          ${TASK_FOLDER}/src
 
       - name: Run redis-server
         run: |
           docker run -d --name redis-server --network redisNetwork \
-          --mount type=bind,source=${REPORT_FOLDER},target=/data \
+          --mount type=bind,source=${TASK_FOLDER}/report,target=/data \
           10-redis-client-and-server-in-docker:0.1 
+          
           SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-server )
           echo "SERVER_STATUS=${SERVER_STATUS}" >> $GITHUB_ENV
 
@@ -98,7 +86,7 @@ jobs:
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
 
       - name: Check if dump.rdb file was created successfully
-        run: ./wait_status_code_and_logs.sh  'cat ${REPORT_FOLDER}/dump.rdb'
+        run: ./wait_status_code_and_logs.sh  'cat ${TASK_FOLDER}/report/dump.rdb'
 
       - name: Get the key
         run: |
@@ -120,11 +108,11 @@ jobs:
 
       - name: Check report folder rights
         run: |
-          user=$(stat -c '%U' ${REPORT_FOLDER})
-          group=$(stat -c '%G' ${REPORT_FOLDER})
-          if [[ "$user" == "$(id -un)" && "$group" == "$(id -gn)" ]]; then
-          echo "User=$user, $(id -un)"
-          echo "Group=$group, $(id -gn)"
+          USER=$(stat -c '%U' ${TASK_FOLDER}/report)
+          GROUP=$(stat -c '%G' ${TASK_FOLDER}/report)
+          if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
+          echo "User=$USER, $(id -un)"
+          echo "Group=$GROUP, $(id -gn)"
           else
           echo "Error: user and group are incorrect"
           exit 1
