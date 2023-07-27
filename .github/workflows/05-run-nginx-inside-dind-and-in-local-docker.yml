@@ -24,12 +24,12 @@ jobs:
             echo ${{ github.workspace }} 
 
       - name: Check working directory
-        working-directory: ${{ github.workspace }}/docker/05-run-nginx-inside-dind-and-in-local-docker
         run: |
           if [ -d "${{ github.workspace }}/docker/05-run-nginx-inside-dind-and-in-local-docker" ]; then
           echo "Directory exists"
           else
           echo "Directory does not exist"
+          exit 1
           fi
 
       - name: Check docker available
