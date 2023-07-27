@@ -89,15 +89,10 @@ jobs:
       - name: Apply manifest
         run: |
           kubectl apply -f ${TASK_FOLDER}/manifests
+          POD_NAME="02-hello-world-python"
+          kubectl wait pod $POD_NAME --for=condition=Ready --timeout=20s
           POD_STATUS=$(kubectl get pod 02-hello-world-python -o jsonpath='{.status.phase}')
           echo "POD_STATUS=${POD_STATUS}" >> $GITHUB_ENV
-
-      - name: Check if Pod logs present
-        run: |
-          ./wait_status_code_and_logs.sh 'kubectl logs 02-hello-world-python -c 02-hello-world-python' 'Hello, Anna'
-          OUTPUT=$(kubectl logs 02-hello-world-python -c 02-hello-world-python)
-          echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
-          echo "OUTPUT=${OUTPUT}"
 
       - name: Verify pod status
         run: |
@@ -108,6 +103,12 @@ jobs:
           echo "Error: Pod is not running"
           exit 1
           fi
+          
+      - name: Check if Pod logs present
+        run: |
+          OUTPUT=$(kubectl logs 02-hello-world-python -c 02-hello-world-python)
+          echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
+          echo "OUTPUT=${OUTPUT}"
           
       - name: Verify output. Expected output - "Hello, Anna"
         run: |
