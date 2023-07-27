@@ -33,7 +33,7 @@ jobs:
         run: kubectl apply -f ${{ github.workspace }}/kubernetes/04-deployment-with-4-pods/manifests
 
       - name: Wait for pods to be ready
-        run: ./wait_status_code_and_logs.sh "kubectl wait $(kubectl get pods -n default -l app=04-deployment-with-4-pods -o name) -n default --for=condition=Ready"
+        run: ./wait_status_code_and_logs.sh 'kubectl wait $(kubectl get pods -n default -l app=04-deployment-with-4-pods -o name) -n default --for=condition=Ready'
 
       - name: Add port to cluster
         run: k3d cluster edit demo-cluster --port-add ${{ env.PORT}}:4590@loadbalancer
