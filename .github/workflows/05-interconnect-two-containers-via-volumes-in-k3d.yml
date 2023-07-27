@@ -1,4 +1,4 @@
-name: K-05 Interconnection via Volume
+name: K-05 Interconnection via Volume in K3d
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 env:
   EXPECTED_OUTPUT: "Hello World"
+  TASK_FOLDER: "${{ github.workspace }}/kubernetes/05-interconnect-two-containers-via-volumes-in-k3d"
 
 jobs:
   build:
@@ -20,19 +21,6 @@ jobs:
       - name: Setup k3d
         uses: rinx/setup-k3d@v0.0.3
 
-      - name: Print current path
-        run: |
-          echo ${{ github.workspace }} 
-
-      - name: Check working directory
-        run: |
-          if [ -d "${{ github.workspace }}/kubernetes/05-interconnect-two-containers-via-volumes-in-k3d" ]; then
-          echo "Directory exists"
-          else
-          echo "Directory does not exist"
-          exit 1
-          fi
-
       - name: Verify Docker installation
         run: docker version
 
@@ -43,7 +31,7 @@ jobs:
         run: k3d cluster create demo-cluster --registry-create demo-registry:12345
 
       - name: Apply the manifest
-        run: kubectl apply -f ./kubernetes/05-interconnect-two-containers-via-volumes-in-k3d/manifests
+        run: kubectl apply -f ${TASK_FOLDER}/manifests
 
       - name: Check "reader" container logs
         run: |
