@@ -10,7 +10,7 @@ env:
   BUILD_GROUP_ID: "$(id -g)"
   EXPECTED_OUTPUT: "Anna"
   CONTAINER_STATUS: "running"
-  TASK_FOLDER: "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker"
+  REPORT_FOLDER: "${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report"
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
 
       - name: Verify Docker installation
         run: docker version
-
+        
       - name: Create network
         run: |
           docker network create redisNetwork
@@ -33,10 +33,10 @@ jobs:
 
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir ${TASK_FOLDER}/report
-          if [ -d ${TASK_FOLDER}/report ]; then
+          mkdir ${REPORT_FOLDER}
+          if [ -d ${REPORT_FOLDER} ]; then
           echo "Data folder was created"
-          ls ${TASK_FOLDER}
+          ls ./docker/10-redis-client-and-server-in-docker
           else
           echo "Data folder is not created"
           exit 1
@@ -47,14 +47,13 @@ jobs:
           docker build -t 10-redis-client-and-server-in-docker:0.1  \
           --build-arg USER_ID=${{ env.BUILD_USER_ID }} \
           --build-arg GROUP_ID=${{ env.BUILD_GROUP_ID }} \
-          ${TASK_FOLDER}/src
+          ./docker/10-redis-client-and-server-in-docker/src
 
       - name: Run redis-server
         run: |
           docker run -d --name redis-server --network redisNetwork \
-          --mount type=bind,source=${TASK_FOLDER}/report,target=/data \
+          --mount type=bind,source=${REPORT_FOLDER},target=/data \
           10-redis-client-and-server-in-docker:0.1 
-          
           SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-server )
           echo "SERVER_STATUS=${SERVER_STATUS}" >> $GITHUB_ENV
 
@@ -86,12 +85,12 @@ jobs:
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
 
       - name: Check if dump.rdb file was created successfully
-        run: ./wait_status_code_and_logs.sh  'cat ${TASK_FOLDER}/report/dump.rdb'
+        run: ./wait_status_code_and_logs.sh  'cat ${REPORT_FOLDER}/dump.rdb'
 
       - name: Get the key
         run: |
           docker run -d --name my-redis-container redis:alpine3.18
-          docker cp ${TASK_FOLDER}/report/dump.rdb my-redis-container:/data
+          docker cp ${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report/dump.rdb my-redis-container:/data
           docker stop my-redis-container
           docker start my-redis-container
           GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
@@ -108,8 +107,8 @@ jobs:
 
       - name: Check report folder rights
         run: |
-          USER=$(stat -c '%U' ${TASK_FOLDER}/report)
-          GROUP=$(stat -c '%G' ${TASK_FOLDER}/report)
+          USER=$(stat -c '%U' ${REPORT_FOLDER})
+          GROUP=$(stat -c '%G' ${REPORT_FOLDER})
           if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
           echo "User=$USER, $(id -un)"
           echo "Group=$GROUP, $(id -gn)"
