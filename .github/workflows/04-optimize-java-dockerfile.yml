@@ -34,16 +34,16 @@ jobs:
       - name: Build unoptimized image
         uses: docker/build-push-action@v2
         with:
-          context: ${SRC_FOLDER}
-          file: ${SRC_FOLDER}/Dockerfile.unoptimized
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.unoptimized
           push: false
           tags: 04-unoptimized:0.1
 
       - name: Build optimized image
         uses: docker/build-push-action@v2
         with:
-          context: ${SRC_FOLDER}
-          file: ${SRC_FOLDER}/Dockerfile.optimized
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.optimized
           push: false
           tags: 04-optimized:0.1
 
