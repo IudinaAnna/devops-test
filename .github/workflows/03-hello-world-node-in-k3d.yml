@@ -92,7 +92,7 @@ jobs:
       run: |
         kubectl apply -f ${TASK_FOLDER}/manifests
         POD_NAME="03-hello-world-node"
-        kubectl wait pod $POD_NAME --for=condition=Ready --timeout=20s
+        kubectl wait pod $POD_NAME --for=condition=Ready --timeout=30s
     
     - name: Check if pod's logs are available
       run: |
@@ -111,10 +111,10 @@ jobs:
         
     - name: Check if pod did not restart
       run: |
-        restarts=$(kubectl describe pod 03-hello-world-node | grep -i 'restart count' | grep -o -E '[0-9]{0,2}' | awk '{s+=$1} END {print s}')
-        echo "Restart count: $restarts"
-        if [ "$restarts" -gt 0 ]; then
-        echo "Error: Pod restarted $restarts times."
+        RESTARTS=$(kubectl describe pod 03-hello-world-node | grep -i 'restart count' | grep -o -E '[0-9]{0,2}' | awk '{s+=$1} END {print s}')
+        echo "Restart count: $RESTARTS"
+        if [ "$RESTARTS" -gt 0 ]; then
+        echo "Error: Pod restarted $RESTARTS times."
         exit 1
         fi
 
