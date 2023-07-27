@@ -92,6 +92,13 @@ jobs:
           POD_STATUS=$(kubectl get pod 02-hello-world-python -o jsonpath='{.status.phase}')
           echo "POD_STATUS=${POD_STATUS}" >> $GITHUB_ENV
 
+      - name: Check if Pod logs present
+        run: |
+          ./wait_exit_exit_code_and_logs.sh 'kubectl logs 02-hello-world-python -c 02-hello-world-python' 'Hello, Anna'
+          OUTPUT=$(kubectl logs 02-hello-world-python -c 02-hello-world-python)
+          echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
+          echo "OUTPUT=${OUTPUT}"
+
       - name: Verify pod status
         run: |
           echo "Pod status: $POD_STATUS"
@@ -101,14 +108,7 @@ jobs:
           echo "Error: Pod is not running"
           exit 1
           fi
-
-      - name: Check if Pod logs present
-        run: |
-          ./wait_exit_exit_code_and_logs.sh 'kubectl logs 02-hello-world-python -c 02-hello-world-python' 'Hello, Anna'
-          OUTPUT=$(kubectl logs 02-hello-world-python -c 02-hello-world-python)
-          echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
-          echo "OUTPUT=${OUTPUT}"
-
+          
       - name: Verify output. Expected output - "Hello, Anna"
         run: |
           if [[ "${{ env.OUTPUT }}" == "${{ env.POD_OUTPUT }}" ]]; then
