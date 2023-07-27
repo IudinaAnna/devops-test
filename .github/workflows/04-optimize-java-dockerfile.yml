@@ -6,6 +6,7 @@ on:
       - '.github/workflows/04-optimize-java-dockerfile.yml'
 env: 
   BUILD_OUTPUT: "hello world!!!"
+  SRC_FOLDER: "${{ github.workspace }}/docker/04-optimize-java-dockerfile/src"
   
 jobs:
   build:
@@ -19,8 +20,11 @@ jobs:
 
       - name: Check if src directory has Dockerfile.unoptimized, Dockerfile.optimized, .java and .txt files
         run: |
-          if [ -f "./docker/04-optimize-java-dockerfile/src/Dockerfile.unoptimized" ] || [ -f "./docker/04-optimize-java-dockerfile/src/Dockerfile.optimized" ] || [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.java' -type f)" ] || [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.txt' -type f)" ]; then
-          ls ./docker/04-optimize-java-dockerfile/src
+          if [ -f ${SRC_FOLDER}/Dockerfile.unoptimized ] || \
+          [ -f "./docker/04-optimize-java-dockerfile/src/Dockerfile.optimized" ] || \
+          [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.java' -type f)" ] || \
+          [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.txt' -type f)" ]; then
+          ls ${SRC_FOLDER}
           echo "All files exist inside 'src' "
           else
           echo "Error: Files does not exist inside 'src' "
