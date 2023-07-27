@@ -95,7 +95,7 @@ jobs:
     
     - name: Check if Pod logs present
       run: |
-        ./wait_exit_exit_code_and_logs.sh 'kubectl logs 01-hello-world-java -c 01-hello-world-java' 'hello world!!!'
+        ./wait_exit_code_and_logs.sh 'kubectl logs 01-hello-world-java -c 01-hello-world-java' 'hello world!!!'
         OUTPUT=$(kubectl logs 01-hello-world-java -c 01-hello-world-java)
         echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
         echo "OUTPUT=${OUTPUT}"
