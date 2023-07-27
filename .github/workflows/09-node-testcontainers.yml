@@ -124,9 +124,9 @@ jobs:
         run: |
           USER=$(stat -c '%U' ${TASK_FOLDER})
           GROUP=$(stat -c '%G' ${TASK_FOLDER})
-          if [[ "USER" == "$(id -un)" && "GROUP" == "$(id -gn)" ]]; then
-          echo "User=USER, $(id -un)"
-          echo "Group=GROUP, $(id -gn)" 
+          if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
+          echo "User=$USER, $(id -un)"
+          echo "Group=$GROUP, $(id -gn)" 
           else
           echo "Error: user and group are incorrect"
           exit 1
