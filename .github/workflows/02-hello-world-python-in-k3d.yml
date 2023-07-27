@@ -94,7 +94,7 @@ jobs:
 
       - name: Check if Pod logs present
         run: |
-          ./wait_status_exit_code_and_logs.sh 'kubectl logs 02-hello-world-python -c 02-hello-world-python' 'Hello, Anna'
+          ./wait_status_code_and_logs.sh 'kubectl logs 02-hello-world-python -c 02-hello-world-python' 'Hello, Anna'
           OUTPUT=$(kubectl logs 02-hello-world-python -c 02-hello-world-python)
           echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
           echo "OUTPUT=${OUTPUT}"
@@ -120,10 +120,10 @@ jobs:
 
       - name: Check if pod did not restart
         run: |
-          restarts=$(kubectl describe pod 02-hello-world-python | grep -i 'restart count' | grep -o -E '[0-9]{0,2}' | awk '{s+=$1} END {print s}')
-          echo "Restart count: $restarts"
-          if [ "$restarts" -gt 0 ]; then
-          echo "Error: Pod restarted $restarts times."
+          REASTARTS=$(kubectl describe pod 02-hello-world-python | grep -i 'restart count' | grep -o -E '[0-9]{0,2}' | awk '{s+=$1} END {print s}')
+          echo "Restart count: $REASTARTS"
+          if [ "$REASTARTS" -gt 0 ]; then
+          echo "Error: Pod restarted $REASTARTS times."
           exit 1
           fi
 
