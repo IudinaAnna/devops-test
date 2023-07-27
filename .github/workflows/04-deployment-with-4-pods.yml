@@ -6,7 +6,7 @@ on:
       - 'kubernetes/04-deployment-with-4-pods/**'
       - '.github/workflows/04-deployment-with-4-pods.yml'
 env:
-  IP_COUNT: "4"
+  IP_COUNTS: "4"
   TASK_FOLDER: "${{ github.workspace }}/kubernetes/04-deployment-with-4-pods"
   PORT: "12378"
 
@@ -54,13 +54,13 @@ jobs:
           echo "$IP_VALUE"
           done
           
-          IP_COUNT=${#sSERVER_ADDRESS[@]}
+          IP_COUNT=${#SERVER_ADDRESS[@]}
           echo "Number of unique address values: $IP_COUNT"
           echo "IP_COUNT=${IP_COUNT}" >> $GITHUB_ENV
 
       - name: Check ip addresses count values. Expected count- "4"
         run: |
-          if [[ "${{ env.IP_COUNT }}" == "${{ env.IP_COUNT }}" ]]; then
+          if [[ "${{ env.IP_COUNT }}" == "${{ env.IP_COUNTS }}" ]]; then
           echo "Load balancing is shared  between 4 pods. Count of pods: $IP_COUNT"
           else
           echo "Error: Load balancing is not shared between 4 pods"
