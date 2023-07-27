@@ -23,8 +23,8 @@ jobs:
         
       - name: Check if src directory has Dockerfile.unoptimized, Dockerfile.optimized, .java and .txt files
         run: |
-          if [ -f ${TASK_FOLDER}/src/Dockerfile.unoptimized ] || [ -f ${TASK_FOLDER}/src/Dockerfile.optimized ] || [ -n "$(find ${TASK_FOLDER}/src -name '*.java' -type f)" ] || [ -n "$(find ${TASK_FOLDER}/src -name '*.txt' -type f)" ]; then
-          ls ${TASK_FOLDER}/src
+          if [ -f ${{ env.TASK_FOLDER }}/src/Dockerfile.unoptimized ] || [ -f ${{ env.TASK_FOLDER }}/src/Dockerfile.optimized ] || [ -n "$(find ${{ env.TASK_FOLDER }}/src -name '*.java' -type f)" ] || [ -n "$(find ${{ env.TASK_FOLDER }}/src -name '*.txt' -type f)" ]; then
+          ls ${{ env.TASK_FOLDER }}/src
           echo "All files exist inside 'src' "
           else
           echo "Error: Files does not exist inside 'src' "
@@ -34,16 +34,16 @@ jobs:
       - name: Build unoptimized image
         uses: docker/build-push-action@v2
         with:
-          context: ${TASK_FOLDER}/src/
-          file: ${TASK_FOLDER}/src/Dockerfile.unoptimized
+          context: ${{ env.TASK_FOLDER }}/src/
+          file: ${{ env.TASK_FOLDER }}/src/Dockerfile.unoptimized
           push: false
           tags: 04-unoptimized:0.1
 
       - name: Build optimized image
         uses: docker/build-push-action@v2
         with:
-          context: ${TASK_FOLDER}/src/
-          file: ${TASK_FOLDER}/src/Dockerfile.optimized
+          context: ${{ env.TASK_FOLDER }}/src/
+          file: ${{ env.TASK_FOLDER }}/src/Dockerfile.optimized
           push: false
           tags: 04-optimized:0.1
 
