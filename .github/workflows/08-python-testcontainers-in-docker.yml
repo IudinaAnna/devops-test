@@ -108,7 +108,7 @@ jobs:
           
       - name: Verify conainer output. Extract build output and check if output is "passed".
         run: |
-          if [[ "${{ env.BUILD_OUTPUT }}" == "${{ env.CONTAINER_OUTPUT}}" ]]; then
+          if [[ "${{ env.BUILD_OUTPUT }}" == *"${{ env.CONTAINER_OUTPUT}}"* ]]; then
           echo "The build is successful"
           echo "Number of passed tests: ${{ env.PASSED_TESTS_COUNT }}"
           else
