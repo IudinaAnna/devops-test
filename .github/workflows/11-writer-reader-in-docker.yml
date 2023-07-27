@@ -7,6 +7,7 @@ on:
 env:
   READER_CONTAINER_OUTPUT: "Hello World !!!"
   READER_CONTAINER_STATUS: "exited"
+  SRC_FOLDER: "${{ github.workspace }}/docker/11-writer-reader-in-docker/src"
   
 jobs:
   build:
@@ -14,27 +15,13 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-    
-    - name: Print current path
-      run: |
-           echo ${{ github.workspace }}
-           
-    - name: Check working directory 
-      run: | 
-        pwd
-        if [ -d "${{ github.workspace }}/docker/11-writer-reader-in-docker" ]; then
-        echo "Directory exists"
-        else
-        echo "Directory does not exist"
-        exit 1
-        fi   
-    
+
     - name: Check docker available
       run: docker info       
     
     - name: Check if src directory is
       run: |
-        if [ -d "./docker/11-writer-reader-in-docker/src" ]; then
+        if [ -d ${SRC_FOLDER} ]; then
         echo "Directory 'src' exists"
         else 
         echo "Error: Directory 'src' does not exist"
@@ -43,8 +30,8 @@ jobs:
     
     - name: Check if src directory has Dockerfile file 
       run: |
-        if [ -f "./docker/11-writer-reader-in-docker/src/Dockerfile" ]; then
-        ls ./docker/11-writer-reader-in-docker/src
+        if [ -f ${SRC_FOLDER}/Dockerfile ]; then
+        ls ${SRC_FOLDER}
         echo "Dockerfile exists inside 'src' "
         else
         echo "Error: Dockerfile does not exist inside 'src' "
@@ -53,7 +40,7 @@ jobs:
     
     - name: Build Docker image. Check if image was created successfully
       run: |
-        docker build -t 11-writer-reader-in-docker:0.1 ./docker/11-writer-reader-in-docker/src
+        docker build -t 11-writer-reader-in-docker:0.1 ${SRC_FOLDER}
         docker images | grep 11-writer-reader-in-docker
         if [ $? -eq 0 ]; then
         echo "Image "11-writer-reader-in-docker:0.1" was created"
