@@ -96,7 +96,6 @@ jobs:
     
     - name: Check if pod's logs are available
       run: |
-        ./wait_status_code_and_logs.sh 'kubectl logs 03-hello-world-node -c 03-hello-world-node' 'Hello, Anna'
         OUTPUT=$(kubectl logs 03-hello-world-node -c 03-hello-world-node)
         echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
         echo "OUTPUT=${OUTPUT}"
