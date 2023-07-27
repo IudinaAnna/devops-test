@@ -98,9 +98,8 @@ jobs:
       - name: Run "testcontainer-python" container
         run: |
           docker run --name testcontainer-python --rm \
-          --mount type=bind,source=${TASK_FOLDER}/report,destination=/app/report\
-          --network demo-network \
-          08-python-testcontainers:0.1 > 08-task-logs.txt
+          --mount type=bind,source=${TASK_FOLDER}/report,destination=/app/report \
+          --network demo-network 08-python-testcontainers:0.1 > 08-task-logs.txt
           
           BUILD_OUTPUT=$(grep "passed" 08-task-logs.txt)
           echo "BUILD_OUTPUT=${BUILD_OUTPUT}" >> $GITHUB_ENV
