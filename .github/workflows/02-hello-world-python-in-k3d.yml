@@ -5,7 +5,7 @@ on:
       - './kubernetes/02-hello-world-python-in-k3d/**'
       - '.github/workflows/02-hello-world-python-in-k3d.yml'
 env:
-  CHECK_POD_STATUS: "Succeeded"
+  CHECK_POD_STATUS: "Running"
   POD_OUTPUT: "Hello, Anna"
   TASK_FOLDER: "${{ github.workspace }}/kubernetes/02-hello-world-python-in-k3d"
 
