@@ -6,7 +6,7 @@ on:
       - '.github/workflows/04-optimize-java-dockerfile.yml'
 env: 
   BUILD_OUTPUT: "hello world!!!"
-  TASK_FOLDER: "{{ github.workspace }}/docker/04-optimize-java-dockerfile/"
+  TASK_FOLDER: "{{ github.workspace }}/docker/04-optimize-java-dockerfile"
   
 jobs:
   build:
