@@ -7,15 +7,12 @@ on:
 env:
   CHECK_POD_STATUS: "Succeeded"
   POD_OUTPUT: "Hello, Anna"
+  TASK_FOLDER: "${{ github.workspace }}/kubernetes/02-hello-world-python-in-k3d"
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -23,47 +20,34 @@ jobs:
       - name: Setup k3d
         uses: nolar/setup-k3d-k3s@v1
 
-      - name: Print current path
-        run: |
-          echo ${{ github.workspace }}
-
-      - name: Check working directory
-        run: |
-          if [ -d "${{ github.workspace }}/kubernetes/02-hello-world-python-in-k3d" ]; then
-          echo "Directory exists"
-          else
-          echo "Directory does not exist"
-          exit 1
-          fi
-
       - name: Check docker available
         run: docker info
 
       - name: Check if kubernetes is available
         run: k3d version
 
-      - name: Check if src directory is
+      - name: Check if src directory exists
         run: |
-          if [ -d "./kubernetes/02-hello-world-python-in-k3d/src" ]; then
+          if [ -d ${TASK_FOLDER}/src ]; then
           echo "Directory 'src' exists"
           else 
           echo "Error: Directory 'src' does not exist"
           exit 1
           fi
 
-      - name: Check if manifests folder is
+      - name: Check if manifests folder exists
         run: |
-          if [ -d "./kubernetes/02-hello-world-python-in-k3d/manifests" ]; then
+          if [ -d ${TASK_FOLDER}/manifests ]; then
           echo "Directory 'manifests' exists"
           else 
           echo "Error: manifests does not exist"
           exit 1
           fi
 
-      - name: Check if src directory has Dockerfile and .py
+      - name: Check if src directory contains Dockerfile and .py
         run: |
-          if [ -f "./kubernetes/02-hello-world-python-in-k3d/src/Dockerfile" ] && [ -n "$(find ./kubernetes/02-hello-world-python-in-k3d/src -name '*.py' -type f)" ]; then
-          ls ./kubernetes/02-hello-world-python-in-k3d/src
+          if [ -f ${TASK_FOLDER}/src/Dockerfile ] && [ -n "$(find ${TASK_FOLDER}/src -name '*.py' -type f)" ]; then
+          ls ${TASK_FOLDER}/src
           echo "All files exist inside 'src' "
           else
           echo "Error: Files does not exist inside 'src' "
@@ -72,8 +56,8 @@ jobs:
 
       - name: Check if manifests directory has pod.yml file
         run: |
-          if [ -f "./kubernetes/02-hello-world-python-in-k3d/manifests/pod.yml" ]; then
-          ls ./kubernetes/02-hello-world-python-in-k3d/manifests
+          if [ -f ${TASK_FOLDER}/manifests/pod.yml ]; then
+          ls ${TASK_FOLDER}/manifests
           echo "All files exist inside 'manifests' "
           else
           echo "Error: Files does not exist inside 'manifests' "
@@ -85,20 +69,12 @@ jobs:
           k3d cluster create demo-cluster --registry-create demo-registry:12345 
 
       - name: Build, tag and push the image
-        run: |
-          docker build -t 02-hello-world-python-in-k3d:0.1 ./kubernetes/02-hello-world-python-in-k3d/src
-          docker tag 02-hello-world-python-in-k3d:0.1 localhost:12345/02-hello-world-python-in-k3d:0.1
-          docker push localhost:12345/02-hello-world-python-in-k3d:0.1
-
-      - name: Check if image was created successfully
-        run: |
-          IMAGE=$(docker images -q 02-hello-world-python-in-k3d:0.1)
-          if [ -n "$IMAGE" ]; then
-          echo "Image 02-hello-world-python-in-k3d:0.1 exists"
-          else
-          echo "Image 02-hello-world-python-in-k3d:0.1 does not exist"
-          exit 1
-          fi
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.TASK_FOLDER }}/src
+          file: ${{ env.TASK_FOLDER }}/src/Dockerfile
+          push: true
+          tags: localhost:12345/02-hello-world-python-in-k3d:0.1
 
       - name: Check if tagged image was created successfully
         run: |
@@ -112,8 +88,7 @@ jobs:
 
       - name: Apply manifest
         run: |
-          kubectl apply -f ./kubernetes/02-hello-world-python-in-k3d/manifests
-          sleep 15
+          kubectl apply -f ${TASK_FOLDER}/manifests
           POD_STATUS=$(kubectl get pod 02-hello-world-python -o jsonpath='{.status.phase}')
           echo "POD_STATUS=${POD_STATUS}" >> $GITHUB_ENV
 
@@ -129,9 +104,7 @@ jobs:
 
       - name: Check if Pod logs present
         run: |
-          sleep 30
-          kubectl get pods
-          kubectl describe pods
+          ./wait_exit_exit_code_and_logs.sh 'kubectl logs 02-hello-world-python -c 02-hello-world-python' 'Hello, Anna'
           OUTPUT=$(kubectl logs 02-hello-world-python -c 02-hello-world-python)
           echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
           echo "OUTPUT=${OUTPUT}"
