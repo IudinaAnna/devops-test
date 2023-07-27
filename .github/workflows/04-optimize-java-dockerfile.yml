@@ -21,9 +21,9 @@ jobs:
       - name: Check if src directory has Dockerfile.unoptimized, Dockerfile.optimized, .java and .txt files
         run: |
           if [ -f ${SRC_FOLDER}/Dockerfile.unoptimized ] || \
-          [ -f "./docker/04-optimize-java-dockerfile/src/Dockerfile.optimized" ] || \
-          [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.java' -type f)" ] || \
-          [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.txt' -type f)" ]; then
+          [ -f ${SRC_FOLDER}/Dockerfile.optimized ] || \
+          [ -n "$(find ${SRC_FOLDER} -name '*.java' -type f)" ] || \
+          [ -n "$(find ${SRC_FOLDER} -name '*.txt' -type f)" ]; then
           ls ${SRC_FOLDER}
           echo "All files exist inside 'src' "
           else
