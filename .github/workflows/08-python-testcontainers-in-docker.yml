@@ -136,8 +136,8 @@ jobs:
           
       - name: Check report folder rights
         run: |
-          USER=$(stat -c '%U' ${TASK_FOLDER}/python)
-          GROUP=$(stat -c '%G' ${TASK_FOLDER}/python)
+          USER=$(stat -c '%U' ${TASK_FOLDER})
+          GROUP=$(stat -c '%G' ${TASK_FOLDER})
           if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
           echo "User=$USER, $(id -un)"
           echo "Group=$GROUP, $(id -gn)" 
