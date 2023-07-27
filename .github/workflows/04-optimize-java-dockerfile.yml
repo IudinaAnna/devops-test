@@ -6,7 +6,7 @@ on:
       - '.github/workflows/04-optimize-java-dockerfile.yml'
 env: 
   BUILD_OUTPUT: "hello world!!!"
-  TASK_FOLDER: "{{ github.workspace }}/docker/04-optimize-java-dockerfile"
+  SRC_FOLDER: "{{ github.workspace }}/docker/04-optimize-java-dockerfile/src"
   
 jobs:
   build:
@@ -23,8 +23,11 @@ jobs:
         
       - name: Check if src directory has Dockerfile.unoptimized, Dockerfile.optimized, .java and .txt files
         run: |
-          if [ -f ${{ env.TASK_FOLDER }}/src/Dockerfile.unoptimized ] || [ -f ${{ env.TASK_FOLDER }}/src/Dockerfile.optimized ] || [ -n "$(find ${{ env.TASK_FOLDER }}/src -name '*.java' -type f)" ] || [ -n "$(find ${{ env.TASK_FOLDER }}/src -name '*.txt' -type f)" ]; then
-          ls ${{ env.TASK_FOLDER }}/src
+          if [ -f ${{ env.SRC_FOLDER }}/Dockerfile.unoptimized ] || \
+          [ -f ${{ env.SRC_FOLDER }}/Dockerfile.optimized ] || \
+          [ -n "$(find ${{ env.SRC_FOLDER }} -name '*.java' -type f)" ] || \
+          [ -n "$(find ${{ env.SRC_FOLDER }} -name '*.txt' -type f)" ]; then
+          ls ${{ env.SRC_FOLDER }}
           echo "All files exist inside 'src' "
           else
           echo "Error: Files does not exist inside 'src' "
@@ -34,16 +37,16 @@ jobs:
       - name: Build unoptimized image
         uses: docker/build-push-action@v2
         with:
-          context: ${{ env.TASK_FOLDER }}/src/
-          file: ${{ env.TASK_FOLDER }}/src/Dockerfile.unoptimized
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.unoptimized
           push: false
           tags: 04-unoptimized:0.1
 
       - name: Build optimized image
         uses: docker/build-push-action@v2
         with:
-          context: ${{ env.TASK_FOLDER }}/src/
-          file: ${{ env.TASK_FOLDER }}/src/Dockerfile.optimized
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.optimized
           push: false
           tags: 04-optimized:0.1
 
