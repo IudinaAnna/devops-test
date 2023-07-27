@@ -90,6 +90,7 @@ jobs:
     - name: Apply manifest 
       run: |
         kubectl apply -f ${TASK_FOLDER}/manifests
+        ./wait_status_code_and_logs.sh 'kubectl wait $(kubectl get pods -n default -l app=01-hello-world-java -o name) -n default --for=condition=Ready'
         POD_STATUS=$(kubectl get pod 01-hello-world-java -o jsonpath='{.status.phase}')
         echo "POD_STATUS=${POD_STATUS}" >> $GITHUB_ENV
     
