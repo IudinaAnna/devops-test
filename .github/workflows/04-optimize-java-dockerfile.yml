@@ -6,6 +6,7 @@ on:
       - '.github/workflows/04-optimize-java-dockerfile.yml'
 env: 
   BUILD_OUTPUT: "hello world!!!"
+  TASK_FOLDER: "{{ github.workspace }}/docker/04-optimize-java-dockerfile/"
   
 jobs:
   build:
@@ -17,16 +18,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Check working directory
-        working-directory: /home/runner/work/training-devops-aiudina/training-devops-aiudina/docker/04-optimize-java-dockerfile
-        run: pwd
-
       - name: Check docker available
         run: docker info
 
       - name: Check if src directory is
         run: |
-          if [ -d "./docker/04-optimize-java-dockerfile/src" ]; then
+          if [ -d ${TASK_FOLDER}/src ]; then
           echo "Directory 'src' exists"
           else
           echo "Error: Directory 'src' does not exist"
@@ -35,8 +32,8 @@ jobs:
 
       - name: Check if src directory has Dockerfile.unoptimized, Dockerfile.optimized, .java and .txt files
         run: |
-          if [ -f "./docker/04-optimize-java-dockerfile/src/Dockerfile.unoptimized" ] || [ -f "./docker/04-optimize-java-dockerfile/src/Dockerfile.optimized" ] || [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.java' -type f)" ] || [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.txt' -type f)" ]; then
-          ls ./docker/04-optimize-java-dockerfile/src
+          if [ -f ${TASK_FOLDER}/src/Dockerfile.unoptimized ] || [ -f ${TASK_FOLDER}/src/Dockerfile.optimized ] || [ -n "$(find ${TASK_FOLDER}/src -name '*.java' -type f)" ] || [ -n "$(find ${TASK_FOLDER}/src -name '*.txt' -type f)" ]; then
+          ls ${TASK_FOLDER}/src
           echo "All files exist inside 'src' "
           else
           echo "Error: Files does not exist inside 'src' "
@@ -46,16 +43,16 @@ jobs:
       - name: Build unoptimized image
         uses: docker/build-push-action@v2
         with:
-          context: ./docker/04-optimize-java-dockerfile/src/
-          file: ./docker/04-optimize-java-dockerfile/src/Dockerfile.unoptimized
+          context: ${TASK_FOLDER}/src/
+          file: ${TASK_FOLDER}/src/Dockerfile.unoptimized
           push: false
           tags: 04-unoptimized:0.1
 
       - name: Build optimized image
         uses: docker/build-push-action@v2
         with:
-          context: ./docker/04-optimize-java-dockerfile/src/
-          file: ./docker/04-optimize-java-dockerfile/src/Dockerfile.optimized
+          context: ${TASK_FOLDER}/src/
+          file: ${TASK_FOLDER}/src/Dockerfile.optimized
           push: false
           tags: 04-optimized:0.1
 
@@ -88,7 +85,7 @@ jobs:
           exit 1
           fi
 
-      - name: Compare images. Unoptimized image shoul be greater then optimized
+      - name: Compare images. Unoptimized image shouD be greater then optimized
         run: |
           SIZE_1=$(docker images 04-unoptimized:0.1 --format "{{ .Size }}" | tr -d 'MB' )
           SIZE_2=$(docker images 04-optimized:0.1 --format "{{ .Size }}" | tr -d 'MB' )
