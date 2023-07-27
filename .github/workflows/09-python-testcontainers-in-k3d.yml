@@ -1,0 +1,122 @@
+name: K-09 Python Testcontainers in K3d
+
+on:
+  push:
+    paths:
+      - '.github/workflows/09-python-testcontainers-in-k3d.yml'
+      - 'kubernetes/09-python-testcontainers-in-k3d/**'
+env:
+  BUILD_ARGUMENT_USER_ID: "$(id -u)"
+  BUILD_ARGUMENT_GROUP_ID: "$(id -g)"
+  CHECK_BUILD_OUTPUT: "passed"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup k3d
+        uses: nolar/setup-k3d-k3s@v1
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Verify Kubernetes installation
+        run: k3d --version
+
+      - name: Print current path
+        run: |
+          echo ${{ github.workspace }}
+
+      - name: Check working directory
+        run: |
+          if [ -d "${{ github.workspace }}/kubernetes/09-python-testcontainers-in-k3d" ]; then
+          echo "Directory exists"
+          else
+          echo "Directory does not exist"
+          exit 1
+          fi
+
+      - name: Initialize and update submodule.
+        run: |
+          git submodule update --init --recursive submodules/testcontainers-python
+          cp -r ./submodules/testcontainers-python ./kubernetes/09-python-testcontainers-in-k3d/src
+          if [ -d "./kubernetes/09-python-testcontainers-in-k3d/src/testcontainers-python" ]; then
+          echo "Submodule directory exists"
+          else
+          echo "Submodule directory does not exist"
+          exit 1
+          fi
+
+      - name: Create report folder and check if folder was created succeessfully.
+        run: |
+          mkdir ./kubernetes/09-python-testcontainers-in-k3d/report
+          if [ -d "${{ github.workspace }}/kubernetes/09-python-testcontainers-in-k3d/report" ]; then
+          echo "Report folder exist"
+          else
+          echo "Report folder does not exist"
+          exit 1
+          fi
+
+      - name: Create cluster with registry
+        run: |
+          k3d cluster create demo-cluster \
+          --registry-create demo-registry:12345 \
+          --volume ${{ github.workspace }}/kubernetes/09-testcontainers-python-in-k3d/report:/report
+
+      - name: Build, tag and push Docker image
+        run: |
+          docker build -t 09-python-testcontainers-in-k3d:0.1 \
+          --build-arg USER_ID=${{ env.BUILD_ARGUMENT_USER_ID }} \
+          --build-arg GROUP_ID=${{ env.BUILD_ARGUMENT_GROUP_ID }} \
+          ./kubernetes/09-python-testcontainers-in-k3d/src/
+          docker tag 09-python-testcontainers-in-k3d:0.1 localhost:12345/09-python-testcontainers-in-k3d:0.1
+          docker push localhost:12345/09-python-testcontainers-in-k3d:0.1
+
+      - name: Apply manifest
+        run: |
+          kubectl apply -f ./kubernetes/09-python-testcontainers-in-k3d/manifests
+          POD_NAME="09-python-testcontainers"
+          kubectl wait pod $POD_NAME --for=condition=Ready --timeout=60s
+
+      - name: Watch `python-testcontontainers` container logs
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl logs 09-python-testcontainers -c python-testcontontainers' 'generated'
+          kubectl logs 09-python-testcontainers -c python-testcontontainers > 09-task-logs.txt
+          BUILD_OUTPUT=$(grep "passed" 09-task-logs.txt)
+          echo "BUILD_OUTPUT=${BUILD_OUTPUT}" >> $GITHUB_ENV
+
+      - name: Check "testcontainers-python" container output. Extract build output and check if output is "passed"
+        run: |
+          if [[ "${{ env.BUILD_OUTPUT }}" == *"${{ env.CHECK_BUILD_OUTPUT }}"* ]]; then
+          echo "The build is successful"
+          else
+          echo "The build is failed"
+          exit 1
+          fi
+
+      - name: Check if report is available in the report folder an report file exist
+        run: |
+          if [ -f "${{ github.workspace }}/kubernetes/09-testcontainers-python-in-k3d/report/python/report.html" ]; then
+          echo "Report exists"
+          cat ${{ github.workspace }}/kubernetes/09-testcontainers-python-in-k3d/report/python/report.html
+          else
+          echo "Report does not exist"
+          exit 1
+          fi
+
+      - name: Check report folder rights
+        run: |
+          folder_path="${{ github.workspace }}/kubernetes/09-testcontainers-python-in-k3d/report/python"
+          user=$(stat -c '%U' $folder_path)
+          group=$(stat -c '%G' $folder_path)
+          if [[ "$user" == "$(id -un)" && "$group" == "$(id -gn)" ]]; then
+          echo "User=$user, $(id -un)"
+          echo "Group=$group, $(id -gn)" 
+          else
+          echo "Error: user and group are incorrect"
+          exit 1
+          fi

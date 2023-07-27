@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  template:
+    metadata:
+      labels:
+        app: pgadmin
+    spec:
+      containers:
+      - name: pgadmin
+        image: dpage/pgadmin4:6.14  
+        env:
+          - name: PGADMIN_DEFAULT_EMAIL
+            value: pgadmin@pgadmin.com
+          - name: PGADMIN_DEFAULT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: pgadmin-password             
+        ports:
+          - name: pgadmin
+            containerPort: 80
+            protocol: TCP
+        volumeMounts:
+          - name: postgres-storage
+            mountPath: /var/lib/pgadmin 
+        readinessProbe:
+          httpGet:
+            path: /
+            port: pgadmin
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /
+            port: pgadmin
+          initialDelaySeconds: 60
+          periodSeconds: 10    
+      volumes: 
+         - name: postgres-storage
+           hostPath: 
+             path: /vol-postgres
+      initContainers: 
+      - name: change-permissions
+        image: busybox
+        command: ["sh","-c", "chown -R 5050:5050 /vol-postgres"]
+        volumeMounts:
+          - name: postgres-storage
+            mountPath: /vol-postgres
+
+
+
+        

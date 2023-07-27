@@ -1,0 +1,104 @@
+name: K-11 Java Testcontainers via Argo Workflows
+on:
+  push:
+    paths:
+      - '.github/workflows/11-java-testcontainers-via-workflows.yml'
+      - 'kubernetes/11-java-testcontainers-via-workflows/**'
+env:
+  BUILD_USER_ID: "$(id -u)"
+  BUILD_GROUP_ID: "$(id -g)"
+  CHECK_BUILD_OUTPUT: "BUILD SUCCESSFUL"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup k3d
+        uses: nolar/setup-k3d-k3s@v1
+
+      - name: Install w3m on Ubuntu
+        run: sudo apt-get update && sudo apt-get install -y w3m
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Verify Kubernetes installation
+        run: k3d --version
+
+      - name: Initialize and update submodule
+        run: |
+          git submodule update --init --recursive submodules/testcontainers-java
+          cp -r ./submodules/testcontainers-java ./kubernetes/11-java-testcontainers-via-workflows/src
+          if [ -d "./kubernetes/11-java-testcontainers-via-workflows/src/testcontainers-java" ]; then
+          echo "Submodule directory exists"
+          else
+          echo "Submodule directory does not exist"
+          exit 1
+          fi
+
+      - name: Create report folder and check if it was successfully created
+        run: |
+          mkdir ./kubernetes/11-java-testcontainers-via-workflows/report
+          if [ -d "${{ github.workspace }}/kubernetes/11-java-testcontainers-via-workflows/report" ]; then
+          echo "Report folder was created"
+          ls ./kubernetes/11-java-testcontainers-via-workflows/report
+          else
+          echo "Report folder wasn't created"
+          exit 1
+          fi
+
+      - name: Create cluster with registry
+        run: |
+          k3d cluster create demo-cluster \
+          --registry-create demo-registry:12345 \
+          --volume ${{ github.workspace }}/kubernetes/11-java-testcontainers-via-workflows/report:/report
+
+      - name: Create namespace and install argo via helm
+        run: |
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
+          helm upgrade --install --cleanup-on-fail argowork argo/argo-workflows \
+          --namespace argo --create-namespace --wait
+
+      - name: Build, tag and push Docker image
+        run: |
+          docker build -t 11-java-testcontainers-via-workflows:0.1 \
+          --build-arg USER_ID=${{ env.BUILD_USER_ID }} \
+          --build-arg GROUP-ID=${{ env.BUILD_GROUP_ID }} \
+          ./kubernetes/11-java-testcontainers-via-workflows/src
+          
+          docker tag 11-java-testcontainers-via-workflows:0.1 localhost:12345/11-java-testcontainers-via-workflows:0.1
+          docker push localhost:12345/11-java-testcontainers-via-workflows:0.1
+
+      - name: Apply manifests
+        run: kubectl apply -f ./kubernetes/11-java-testcontainers-via-workflows/manifests
+
+      - name: Watch `java-testcontainers-argo  ` container logs
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl logs 11-argo-java-testcontainers -c main' 'BUILD SUCCESSFUL'
+          kubectl logs 11-argo-java-testcontainers -c main > 11-logs.txt
+          BUILD_OUTPUT=$(grep "BUILD SUCCESSFUL" 11-logs.txt)
+          echo "BUILD_OUTPUT=${BUILD_OUTPUT}" >> $GITHUB_ENV
+
+      - name: Check "java-testcontainers-argo  " container output. Extract build output and check if output is "BUILD SUCCESSFUL"
+        run: |
+          if [[ "${{ env.BUILD_OUTPUT }}" == *"${{ env.CHECK_BUILD_OUTPUT }}"* ]]; then
+          echo "The build is successful"
+          else
+          echo "The build is failed"
+          exit 1
+          fi
+
+      - name: Check if report is available in the report folder an report file exist
+        run: |
+          if [ -f "${{ github.workspace }}/kubernetes/11-java-testcontainers-via-workflows/report/java/reports/tests/test/index.html" ]; then
+          echo "Report exist"
+          w3m ${{ github.workspace }}/kubernetes/11-java-testcontainers-via-workflows/report/java/reports/tests/test/index.html
+          else
+          echo "Report does not exist"
+          exit 1
+          fi

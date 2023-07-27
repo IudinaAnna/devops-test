@@ -1,0 +1,159 @@
+name: D-08 Python Testcontainers
+
+on:
+  push:
+    paths:
+      - './docker/08-python-testcontainers/**'
+      - '.github/workflows/08-python-testcontainers-in-docker.yml'
+
+env:
+  BUILD_ARGUMENT_USER_ID: "$(id -u)" 
+  BUILD_ARGUMENT_GROUP_ID: "$(id -g)" 
+  CONTAINER_STATUS: "running"
+  BUILD_IMAGE: "08-python-testcontainers:0.1"
+                
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      
+      - name: Print current path
+        run: |
+           echo ${{ github.workspace }}
+           
+      - name: Check if directory
+        working-directory: ${{ github.workspace }}/08-python-testcontainers
+        run: |
+          if [ -d "${{ github.workspace }}/docker/08-python-testcontainers" ]; then
+          echo "Directory exists"
+          else
+          echo "Directory does not exist"
+          exit 1
+          fi
+          
+      - name: Check docker available
+        run: docker info
+        
+      - name: Initialize and update submodule
+        run: |
+          git submodule update --init --recursive submodules/testcontainers-python
+          cp -r ./submodules/testcontainers-python ./docker/08-python-testcontainers/src/
+          if [ -d "./docker/08-python-testcontainers/src/testcontainers-python" ]; then
+          echo "Submodule directory exists"
+          else
+          echo "Submodule directory does not exist"
+          exit 1
+          fi
+          
+      - name: Create network. Check if network was created successfully.
+        run: |
+          docker network create demo-network
+          docker network ls | grep demo-network
+          if [ $? -eq 0 ]; then
+          echo " "demo-network" network was created"
+          fi
+          
+      - name: Run dind container. Check if dind container was created successfully.
+        run: |
+          docker run --privileged -d -p 12383:2375 --name dind -e DOCKER_TLS_CERTDIR="" --network demo-network docker:23.0.1-dind
+          sleep 10
+          docker ps -a
+          docker ps -a | grep dind
+          if [ $? -eq 0 ]; then
+          echo "Dind container was created"
+          fi
+          STATUS=$(docker inspect -f '{{ .State.Status }}' dind )
+          echo "CONTAINER_STATUS=${STATUS}" >> $GITHUB_ENV
+          
+      - name:  Check dind container status
+        run: |
+          if [[ "${{ env.CONTAINER_STATUS }}" != "running" ]]; then
+          echo "Containers did not exit successfully"
+          exit 1
+          fi
+          echo "Dind container is running"
+          
+      - name: Build Docker image. Check if image was created successfully.
+        run: |
+          docker build -t 08-python-testcontainers:0.1 \
+          --build-arg USER_ID=${{ env.BUILD_ARGUMENT_USER_ID }} \
+          --build-arg GROUP_ID=${{ env.BUILD_ARGUMENT_GROUP_ID }} \
+          ./docker/08-python-testcontainers/src/
+          sleep 10
+          docker images
+          docker images | grep 08-python-testcontainers
+          if [ $? -eq 0 ]; then
+          echo "Image was created"
+          else 
+          exit 1
+          fi
+          
+      - name: Create report folder. Check if report folder was created successfully.
+        run: |
+          mkdir ${{ github.workspace }}/docker/08-python-testcontainers/report
+          if [ -d "${{ github.workspace }}/docker/08-python-testcontainers/report" ]; then
+          echo "Report folder exist"
+          else
+          echo "Report folder does not exist"
+          exit 1
+          fi
+          
+      - name: Run "testcontainer-python" container
+        run: |
+          docker run --name testcontainer-python --rm \
+          --mount type=bind,source=${{ github.workspace }}/docker/08-python-testcontainers/report,destination=/app/report\
+          --network demo-network \
+          08-python-testcontainers:0.1 > 08-task-logs.txt
+          BUILD_OUTPUT=$(grep "passed" 08-task-logs.txt)
+          echo "BUILD_OUTPUT=${BUILD_OUTPUT}" >> $GITHUB_ENV
+          PASSED_TESTS_COUNT=$(grep -o ' [0-9]\+ passed' 08-task-logs.txt | awk '{total+=$1}END{print total}')
+          echo "PASSED_TESTS_COUNT=${PASSED_TESTS_COUNT}" >> $GITHUB_ENV
+          
+      - name: Verify conainer output. Extract build output and check if output is "passed".
+        run: |
+          if [[ "${{ env.BUILD_OUTPUT }}" == *"passed"* ]]; then
+          echo "The build is successful"
+          echo "Number of passed tests: ${{ env.PASSED_TESTS_COUNT }}"
+          else
+          echo "The build is failed"
+          exit 1
+          fi
+          
+      - name: How namy tests was checked
+        run: |
+          if [[ "${{ env.PASSED_TESTS_COUNT }}" != "2" ]]; then
+          echo "Was passed less then 2 test"
+          exit 1
+          fi
+          
+      - name: Check if report is available in the report folder
+        run: |
+          cd ${{ github.workspace }}/docker/08-python-testcontainers/report/python
+          ls -lha
+          if [ -f "${{ github.workspace }}/docker/08-python-testcontainers/report/python/report.html" ]; then
+          echo "Report exist"
+          cat ${{ github.workspace }}/docker/08-python-testcontainers/report/python/report.html
+          else
+          echo "Report does not exist"
+          exit 1
+          fi
+          
+      - name: Check report folder rights
+        run: |
+          folder_path="${{ github.workspace }}/docker/08-python-testcontainers/report/python"
+          user=$(stat -c '%U' $folder_path)
+          group=$(stat -c '%G' $folder_path)
+          if [[ "$user" == "$(id -un)" && "$group" == "$(id -gn)" ]]; then
+          echo "User=$user, $(id -un)"
+          echo "Group=$group, $(id -gn)" 
+          else
+          echo "Error: user and group are incorrect"
+          exit 1
+          fi

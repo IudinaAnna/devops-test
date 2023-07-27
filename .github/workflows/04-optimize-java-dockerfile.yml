@@ -1,0 +1,101 @@
+name: D-04 Optimize Java Dockerfile
+on:
+  push:
+    paths:
+      - 'docker/04-optimize-java-dockerfile/**'
+      - '.github/workflows/04-optimize-java-dockerfile.yml'
+env: 
+  BUILD_OUTPUT: "hello world!!!"
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check working directory
+        working-directory: /home/runner/work/training-devops-aiudina/training-devops-aiudina/docker/04-optimize-java-dockerfile
+        run: pwd
+
+      - name: Check docker available
+        run: docker info
+
+      - name: Check if src directory is
+        run: |
+          if [ -d "./docker/04-optimize-java-dockerfile/src" ]; then
+          echo "Directory 'src' exists"
+          else
+          echo "Error: Directory 'src' does not exist"
+          exit 1
+          fi
+
+      - name: Check if src directory has Dockerfile.unoptimized, Dockerfile.optimized, .java and .txt files
+        run: |
+          if [ -f "./docker/04-optimize-java-dockerfile/src/Dockerfile.unoptimized" ] || [ -f "./docker/04-optimize-java-dockerfile/src/Dockerfile.optimized" ] || [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.java' -type f)" ] || [ -n "$(find ./docker/04-optimize-java-dockerfile/src -name '*.txt' -type f)" ]; then
+          ls ./docker/04-optimize-java-dockerfile/src
+          echo "All files exist inside 'src' "
+          else
+          echo "Error: Files does not exist inside 'src' "
+          exit 1
+          fi
+
+      - name: Build unoptimized image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./docker/04-optimize-java-dockerfile/src/
+          file: ./docker/04-optimize-java-dockerfile/src/Dockerfile.unoptimized
+          push: false
+          tags: 04-unoptimized:0.1
+
+      - name: Build optimized image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./docker/04-optimize-java-dockerfile/src/
+          file: ./docker/04-optimize-java-dockerfile/src/Dockerfile.optimized
+          push: false
+          tags: 04-optimized:0.1
+
+      - name: Run optimized container
+        run: |
+          OUTPUT1=$(docker run --name 04-optimized 04-optimized:0.1)
+          STATUS1=$(docker inspect -f '{{.State.Status}}' 04-optimized )
+          echo "OUTPUT1=${OUTPUT1}" >> $GITHUB_ENV
+          echo "CONTAINER_STATUS1=${STATUS1}" >> $GITHUB_ENV
+
+      - name: Run unoptimized container
+        run: |
+          OUTPUT2=$(docker run --name 04-unoptimized 04-unoptimized:0.1)
+          STATUS2=$(docker inspect -f '{{.State.Status}}' 04-unoptimized )
+          echo "CONTAINER_STATUS2=${STATUS2}" >> $GITHUB_ENV
+          echo "OUTPUT2=${OUTPUT2}" >> $GITHUB_ENV
+
+      - name: Check containers output
+        run: |
+          if [[ "${{ env.OUTPUT1 }}" != "${{ env.BUILD_OUTPUT }}" || "${{ env.OUTPUT2 }}" != "${{ env.BUILD_OUTPUT }}" ]]; then
+          echo "Unexpected output: ${{ env.OUTPUT1 }} ${{ env.OUTPUT2 }}"
+          exit 1
+          fi
+          echo "Output: ${{ env.OUTPUT1 }} ${{ env.OUTPUT2 }}"
+
+      - name: Check containers status
+        run: |
+          if [[ "${{ env.CONTAINER_STATUS1 }}" != "exited" || "${{ env.CONTAINER_STATUS2 }}" != "exited" ]]; then
+          echo "Container did not exit successfully"
+          exit 1
+          fi
+
+      - name: Compare images. Unoptimized image shoul be greater then optimized
+        run: |
+          SIZE_1=$(docker images 04-unoptimized:0.1 --format "{{ .Size }}" | tr -d 'MB' )
+          SIZE_2=$(docker images 04-optimized:0.1 --format "{{ .Size }}" | tr -d 'MB' )
+          echo "Size of 04-unoptimized:0.1: $SIZE_1"
+          echo "Size of 04-optimized:0.1: $SIZE_2"
+          if (( SIZE_1 > SIZE_2 )); then
+          echo "The size of images 04-unoptimized:0.1 is greater than the size of 04-optimized:0.1"
+          else
+          echo "The size of 04-unoptimized:0.1 is not greater than the size of 04-optimized:0.1"
+          fi

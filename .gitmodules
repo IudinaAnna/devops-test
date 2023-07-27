@@ -1,3 +1,12 @@
+[submodule "submodules/testcontainers-python"]
+	path = submodules/testcontainers-python
+	url = https://github.com/testcontainers/testcontainers-python.git
 [submodule "submodules/testcontainers-java"]
 	path = submodules/testcontainers-java
 	url = https://github.com/testcontainers/testcontainers-java.git
+[submodule "submodules/testcontainers-node"]
+	path = submodules/testcontainers-node
+	url = https://github.com/testcontainers/testcontainers-node.git
+[submodule "submodules/springboot-api-rest-example"]
+	path = submodules/springboot-api-rest-example
+	url = https://github.com/Alliedium/springboot-api-rest-example.git

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: 03-hello-world-node
+  labels:
+    name: 03-hello-world-node
+spec:
+  containers:
+  - name: 03-hello-world-node
+    image: demo-registry:5000/03-hello-world-node-in-k3d:0.1
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+   

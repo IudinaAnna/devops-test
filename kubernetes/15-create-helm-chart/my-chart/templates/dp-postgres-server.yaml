@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-service
+spec:
+  selector:
+    matchLabels:
+      app: postgres-service
+  template:
+    metadata:
+      labels:
+        app: postgres-service
+    spec:
+      containers:
+      - name: postgres-service
+        image: postgres:14.5-alpine3.16 
+        env: 
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret 
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret 
+                key: POSTGRES_PASSWORD
+          - name: POSTGRES_DB  
+            valueFrom: 
+              configMapKeyRef: 
+                name: postgres-config
+                key: DB_NAME             
+          - name: PGDATA
+            valueFrom: 
+              configMapKeyRef: 
+                name: postgres-config
+                key: PGDATA           
+        ports:
+          - containerPort: 5432
+        volumeMounts:
+          - name: postgredb-data
+            mountPath: /var/lib/postgresql/data
+        readinessProbe:
+          exec:
+            command: ["/bin/sh", "-c", "pg_isready -U '${POSTGRES_USER}' -d '${POSTGRES_DB}'"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command: ["/bin/sh", "-c", "pg_isready -U '${POSTGRES_USER}' -d '${POSTGRES_DB}'"]
+          initialDelaySeconds: 60
+          periodSeconds: 10    
+      volumes:
+        - name: postgredb-data
+          hostPath:
+            path: /databasevolume
+

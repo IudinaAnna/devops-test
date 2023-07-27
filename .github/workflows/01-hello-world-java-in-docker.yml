@@ -1,0 +1,89 @@
+name: D-01 Java Hello Wolrd
+on:
+  push:
+    paths:
+      - 'docker/01-hello-world-java-in-docker/**'
+      - '.github/workflows/01-hello-world-java-in-docker.yml'
+env: 
+  EXPECTED_OUTPUT: "hello world!!!"
+  EXIT_CODE_STATUS: "0"
+  TASK_FOLDER: "${{ github.workspace }}/docker/01-hello-world-java-in-docker"
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Print current path
+        run: |
+           echo ${{ github.workspace }}
+           
+      - name: Check if directory
+        run: |
+          if [ -d ${TASK_FOLDER} ]; then
+          echo "Directory exists"
+          else
+          echo "Directory does not exist"
+          exit 1
+          fi
+      
+      - name: Check docker available
+        run: docker info
+      
+      - name: Check if src directory is
+        run: |
+          if [ -d ${TASK_FOLDER}/src ]; then
+          echo "Directory 'src' exists"
+          else
+          echo "Error: SRC does not exist"
+          exit 1
+          fi
+      
+      - name: Check if src directory has Dockerfile, .java and .txt files
+        run: |
+          if [ -f ${TASK_FOLDER}/src/Dockerfile ] || [ -n "$(find ${TASK_FOLDER}/src -name '*.java' -type f)" ] || [ -n "$(find .${TASK_FOLDER}/src -name '*.txt' -type f)" ]; then
+          ls ${TASK_FOLDER}/src
+          echo "All files exist inside 'src' "
+          else
+          echo "Error: 'src' folder is empty "
+          exit 1
+          fi
+      
+      - name: Build Docker image
+        run: |
+          docker build -t 01-hello-world-java-in-docker:0.1 ${TASK_FOLDER}/src
+      
+      - name: Verify if image was created
+        run: |
+          docker images | grep 01-hello-world-java-in-docker
+          if [ $? -eq 0 ]; then
+          echo "Image was created"
+          else exit 1
+          fi
+          docker image inspect 01-hello-world-java-in-docker:0.1 > /dev/null
+      
+      - name: Run Docker container
+        run: |
+          OUTPUT=$(docker run --name 01-task 01-hello-world-java-in-docker:0.1)
+          STATUS=$(docker inspect -f '{{ .State.ExitCode }}' 01-task )
+          echo "CONTAINER_STATUS=${STATUS}" >> $GITHUB_ENV
+          echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
+      
+      - name: Check container output. 
+        run: |
+          if [[ "${{ env.OUTPUT }}" != "${{ env.EXPECTED_OUTPUT }}" ]]; then
+          echo "Unexpected output: ${{ env.OUTPUT }}"
+          exit 1
+          fi
+          echo "Output: ${{ env.OUTPUT }}"
+      
+      - name: Check container status. Status should be exited
+        run: |
+          if [[ "${{ env.CONTAINER_STATUS }}" != "${{ env.EXIT_CODE_STATUS }}" ]]; then
+          echo "Container did not exit successfully"
+          exit 1
+          fi
+
+

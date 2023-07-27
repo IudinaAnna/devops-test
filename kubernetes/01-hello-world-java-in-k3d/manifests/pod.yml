@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: 01-hello-world-java
+  labels:
+    name: 01-hello-world-java
+spec:
+  containers:
+  - name: 01-hello-world-java
+    image: demo-registry:5000/01-hello-world-java-in-k3d:0.1
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+  

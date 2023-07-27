@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: 06-sleep
+  labels:
+    name: 06-sleep
+spec:
+  containers:
+    - name: reader
+      image: ubuntu:23.10
+      command: ["sh", "-c", "sleep 10 && cat /sleep/test.txt"]
+      volumeMounts:
+        - name: sleep
+          mountPath: /sleep
+    - name: writer
+      image: ubuntu:23.10
+      command: ["sh","-c","echo 'Hello World !!!' > /sleep/test.txt"]
+      volumeMounts:
+        - name: sleep
+          mountPath: /sleep
+  restartPolicy: Never
+  volumes:
+    - name: sleep
+      emptyDir: {}

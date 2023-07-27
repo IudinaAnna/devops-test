@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dockerize-reader-test-1
+spec:
+  containers:
+    - name: writer
+      image: ubuntu:23.10
+      command: ["sh", "-c"]
+      args: ["sleep 5 && echo 'Hello World !!!' > /data/text1.txt && sleep infinity"]
+      volumeMounts:
+          - name: data
+            mountPath: /data 
+    - name: reader
+      image: demo-registry:5000/06-control-the-sequence-dockerize:0.1
+      command: ["sh", "-c", "dockerize -wait file:///data/text1.txt -timeout 20s && cat /data/text1.txt && sleep infinity"]
+      volumeMounts:
+          - name: data
+            mountPath: /data
+  volumes:
+   - name: data
+     emptyDir: {}
+  

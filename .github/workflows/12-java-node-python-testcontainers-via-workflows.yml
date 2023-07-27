@@ -1,0 +1,145 @@
+name: K-12 Java Node Python testcontainers via Argo Workflows
+
+on:
+  push:
+    paths:
+      - '.github/workflows/12-java-node-python-testcontainers-via-workflows.yml'
+      - 'kubernetes/12-java-node-python-testcontainers-via-workflows/**'
+env:
+  SRC_FOLDER: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/src"
+  REPORT_FOLDER: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup k3d
+        uses: nolar/setup-k3d-k3s@v1
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Verify Kubernetes installation
+        run: k3d --version
+
+      - name: Initialize and update submodule
+        run: |
+          git submodule update --init --recursive 
+          cp -r ./submodules/testcontainers-java $SRC_FOLDER
+          cp -r ./submodules/testcontainers-python $SRC_FOLDER
+          cp -r ./submodules/testcontainers-node $SRC_FOLDER
+
+      - name: Create report folder and check if it was successfully created
+        run: |
+          mkdir $REPORT_FOLDER
+          if [ -d $REPORT_FOLDER ]; then
+          echo "Report folder was created"
+          ls -lha $REPORT_FOLDER
+          else
+          echo "Report folder wasn't created"
+          exit 1
+          fi
+
+      - name: Create cluster with registry
+        run: |
+          k3d cluster create demo-cluster \
+          --registry-create demo-registry:12345 \
+          --volume $REPORT_FOLDER:/report
+
+      - name: Create namespace and install argo via helm
+        run: |
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
+          helm upgrade --install --cleanup-on-fail argowork argo/argo-workflows \
+          --namespace argo-wf \
+          --create-namespace --wait
+
+      - name: Build, tag and push the java image
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.java
+          push: true
+          tags: localhost:12345/12-java-testcontainers-via-workflows:0.1
+          build-args: |
+            USER_ID=$(id -u)
+            GROUP_ID=$(id -g)
+
+      - name: Build, tag and push the python image
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.python
+          push: true
+          tags: localhost:12345/12-python-testcontainers-via-workflows:0.1
+          build-args: |
+            USER_ID=$(id -u)
+            GROUP_ID=$(id -g) 
+
+      - name: Build, tag and push the python image
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.SRC_FOLDER }}
+          file: ${{ env.SRC_FOLDER }}/Dockerfile.node
+          push: true
+          tags: localhost:12345/12-node-testcontainers-via-workflows:0.1
+          build-args: |
+            USER_ID=$(id -u)
+            GROUP_ID=$(id -g)
+
+      - name: Apply manifest
+        run: |
+          kubectl apply -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/manifests
+
+      - name: Check if java build was successful and reports are available in report folder
+        run: |
+          JAVA_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/java/reports/tests/test/index.html"
+          ./wait_status_code_and_logs.sh "ls $JAVA_REPORT"
+          cat $JAVA_REPORT
+          if grep -o "Success" $JAVA_REPORT; then
+          echo "  The testcontainers-java build was successful"
+          else
+          echo "  The testcontainers-java build was failed"
+          exit 1
+          fi     
+
+      - name: Check if python build was successful and reports are available in report folder
+        run: |
+          PYTHON_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/python/report.html"
+          ./wait_status_code_and_logs.sh "ls $PYTHON_REPORT"
+          cat $PYTHON_REPORT
+          if grep -q "2 passed" $PYTHON_REPORT; then
+          echo "  The testcontainers-python build was successful"
+          else
+          echo "  The testcontainers-python build was failed"
+          exit 1
+          fi
+
+      - name: Check if node build was successful and reports are available in report folder
+        run: |
+          NODE_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/node/index.html"
+          ./wait_status_code_and_logs.sh "ls $NODE_REPORT"
+          cat $NODE_REPORT
+          if grep -q "4 passed" $NODE_REPORT; then
+          echo "  The testcontainers-node build was successful"
+          else
+          echo "  The testcontainers-node build was failed"
+          exit 1
+          fi 
+
+      - name: Check report folder rights
+        run: |
+          USER=$(stat -c '%U' $REPORT_FOLDER)
+          GROUP=$(stat -c '%G' $REPORT_FOLDER)
+          if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
+          echo "USER=$USER, $(id -un)"
+          echo "GROUP=$GROUP, $(id -gn)" 
+          else
+          echo "Error: user and group are incorrect"
+          exit 1
+          fi

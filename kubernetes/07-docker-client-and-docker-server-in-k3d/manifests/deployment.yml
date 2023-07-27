@@ -13,17 +13,17 @@ spec:
         app: 07-client-and-server
     spec:
       containers:
-        - name: docker-server
-          image: docker:23.0.1-dind
-          env:
-            - name: DOCKER_TLS_CERTDIR
-              value: ""
-          securityContext:
-            privileged: true
-        - name: docker-client
-          image: docker:23.0.1-cli-alpine3.17
-          command: ["sh", "-c", "docker run -p 8057:80 nginxdemos/hello"]
-          env:
-            - name: DOCKER_HOST
-              value: "tcp://localhost:2375"
+      - name: docker-server
+        image: docker:23.0.1-dind
+        env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+        securityContext:
+          privileged: true
+      - name: docker-client
+        image: docker:23.0.1-cli-alpine3.17
+        command: ["sh", "-c", "docker run -p 8057:80 nginxdemos/hello"]
+        env:
+         - name: DOCKER_HOST
+           value: "tcp://localhost:2375"
 

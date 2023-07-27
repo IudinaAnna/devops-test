@@ -1,0 +1,117 @@
+name: D-05 Nginx inside Dind and in Local Docker
+
+on:
+  push:
+    paths:
+      - 'docker/05-run-nginx-inside-dind-and-in-local-docker/**'
+      - '.github/workflows/05-run-nginx-inside-dind-and-in-local-docker.yml'
+env: 
+  GITHUB_SERVER_HOST: "localhost"
+  GITHUB_SERVER_PORT: "7050"
+  DIND_CONTAINER_STATUS: "running"
+  LOCAL_NGINX_CONTAINER_STATUS: "running"
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Print current path
+        run: |
+            echo ${{ github.workspace }} 
+
+      - name: Check working directory
+        working-directory: ${{ github.workspace }}/docker/05-run-nginx-inside-dind-and-in-local-docker
+        run: |
+          if [ -d "${{ github.workspace }}/docker/05-run-nginx-inside-dind-and-in-local-docker" ]; then
+          echo "Directory exists"
+          else
+          echo "Directory does not exist"
+          fi
+
+      - name: Check docker available
+        run: docker info
+
+      - name: Create network. And verify if network was created.
+        run: |
+          docker network create demo-network
+          docker network ls | grep demo-network
+          if [ $? -eq 0 ]; then
+          echo " "demo-network" network was created"
+          fi
+
+      - name: Run Dind container
+        run: |
+          docker run --privileged -d -p 12377:2375 -p 5050:5050 --name dind -e DOCKER_TLS_CERTDIR="" --network demo-network docker:23.0.1-dind
+          STATUS=$(docker inspect -f '{{ .State.Status }}' dind )
+          echo "CONTAINER_STATUS=${STATUS}" >> $GITHUB_ENV
+
+      - name: Run nginx inside dind
+        run: |
+          sleep 25
+          docker -H localhost:12377 run -d --name 05-nginx-inside-dind -p 5050:80 nginxdemos/hello
+          docker -H localhost:12377 ps -a
+
+      - name: Check if container inside dind was created
+        run: |
+          if ! docker -H localhost:12377 ps -a --format '{{ .Names }}' | grep -q "05-nginx-inside-dind"; then
+          echo "Container 05-nginx-inside-dind does not exist"
+          exit 1
+          fi
+
+      - name:  Check dind container status. Status should be running.
+        run: |
+          if [[ "${{ env.CONTAINER_STATUS }}" != "${{ env.DIND_CONTAINER_STATUS }}" ]]; then
+          echo "Containers did not exit successfully"
+          exit 1
+          fi
+
+      - name: Check connection with nginx inside dind container.
+        run: |
+          curl localhost:5050
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" localhost:5050)
+          if [[ "$RESPONSE" -eq 200 ]]; then
+          echo "Successful connection to nginx inside dind. Status $RESPONSE code "
+          else
+          echo "Erro: bad connection with nginx inside dind. Status $RESPONSE code"
+          exit 1
+          fi
+
+      - name: Run nginx in local docker
+        run: |
+          docker run -d --name 05-nginx-in-local-docker -p 7050:80 nginxdemos/hello
+          STATUS=$(docker inspect -f '{{ .State.Status }}' 05-nginx-in-local-docker )
+          echo "CONTAINER_STATUS=${STATUS}" >> $GITHUB_ENV
+          
+      - name: Check if container in local docker was created
+        run: |
+          if docker ps -a --format '{{ .Names }}' | grep -q "05-nginx-in-local-docker"; then
+          echo "Container '05-nginx-in-local-docker' exists"
+          else
+          echo "Container '05-nginx-in-local-docker' does not exist"
+          exit 1
+          fi
+
+      - name: Check connection with nginx in local docker
+        run: |
+          docker images
+          sleep 15
+          curl http://${{ env.GITHUB_SERVER_HOST }}:${{ env.GITHUB_SERVER_PORT }}
+          RESPONSE1=$(curl -s -o /dev/null -w "%{http_code}" localhost:5050)
+          if [[ "$RESPONSE1" -eq 200 ]]; then
+          echo "Successful connection to nginx in local docker. Status code $RESPONSE1 "
+          else
+          echo "Connection error to nginx. Status code $RESPONSE1 "
+          exit 1
+          fi
+          docker ps -a
+          
+      - name:  Check local nginx container status. Status should be running.
+        run: |
+          if [[ "${{ env.CONTAINER_STATUS }}" != "${{ env.LOCAL_NGINX_CONTAINER_STATUS }}" ]]; then
+          echo "Containers did not exit successfully"
+          exit 1
+          fi

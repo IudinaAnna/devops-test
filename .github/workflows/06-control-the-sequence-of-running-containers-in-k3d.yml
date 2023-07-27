@@ -1,0 +1,85 @@
+name: K-06 Control the sequence of running containers
+on:
+  push:
+    paths:
+      - '.github/workflows/06-control-the-sequence-of-running-containers-in-k3d.yml'
+      - 'kubernetes/06-control-the-sequence-of-running-containers-in-k3d/**'
+env:
+  EXPECTED_OUTPUT: "Hello World !!!"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup k3d
+        uses: nolar/setup-k3d-k3s@v1
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Verify Kubernetes installation
+        run: k3d --version
+
+      - name: Create cluster with registry
+        run: k3d cluster create demo-cluster --registry-create demo-registry:12345
+
+      - name: Build, tag and push the image for dockerize
+        run: |
+          docker build -t 06-control-the-sequence-dockerize:0.1 \
+          ./kubernetes/06-control-the-sequence-of-running-containers/src
+          docker tag 06-control-the-sequence-dockerize:0.1 localhost:12345/06-control-the-sequence-dockerize:0.1
+          docker push localhost:12345/06-control-the-sequence-dockerize:0.1
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f ./kubernetes/06-control-the-sequence-of-running-containers/manifests/dockerize.yml
+          kubectl apply -f ./kubernetes/06-control-the-sequence-of-running-containers/manifests/init.yml
+          kubectl apply -f ./kubernetes/06-control-the-sequence-of-running-containers/manifests/sleep.yml 
+          kubectl apply -f ./kubernetes/06-control-the-sequence-of-running-containers/manifests/job.yml
+          POD_NAMES=$(kubectl get pods -l job-name=06-job -o jsonpath='{.items[*].metadata.name}')
+          echo "POD_NAMES=${POD_NAMES}" >> $GITHUB_ENV
+
+      - name: Get dockerize pod logs
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl logs dockerize-reader-test-1 -c reader' 'Hello World'
+          OUTPUT_DOCKERIZE=$(kubectl logs dockerize-reader-test-1 -c reader > 06-dockerize-logs.txt)
+          OUTPUT_DOCKERIZE=$(grep -o "Hello World !!!" 06-dockerize-logs.txt)
+          echo "OUTPUT_DOCKERIZE=${OUTPUT_DOCKERIZE}" >> $GITHUB_ENV
+          echo "${OUTPUT_DOCKERIZE}"
+
+      - name: Get init container pod logs
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl logs 06-init-containers -c reader' 'Hello World'
+          OUTPUT_INIT=$(kubectl logs 06-init-containers -c reader)
+          echo "OUTPUT_INIT=${OUTPUT_INIT}" >> $GITHUB_ENV
+          echo "${OUTPUT_INIT}"
+
+      - name: Get sleep pod logs
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl logs 06-sleep -c reader' 'Hello World'
+          OUTPUT_SLEEP=$(kubectl logs 06-sleep -c reader)
+          echo "OUTPUT_SLEEP=${OUTPUT_SLEEP}" >> $GITHUB_ENV
+          echo "${OUTPUT_SLEEP}"
+
+      - name: Get job logs
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl logs ${POD_NAMES} -c reader' 'Hello World'
+          POD_NAMES="${POD_NAMES}"
+          for pod_name in $POD_NAMES; do
+          OUTPUT_JOB=$(kubectl logs $pod_name -c reader)
+          done
+          echo "OUTPUT_JOB=${OUTPUT_JOB}" >> $GITHUB_ENV
+          echo "${OUTPUT_JOB}"
+
+      - name: Verify output. Expected output - "Hello World !!!"
+        run: |
+          if [[ "${{ env.OUTPUT_JOB }}" == "${{ env.EXPECTED_OUTPUT }}" ]] && [[ "${{ env.OUTPUT_SLEEP }}" == "${{ env.EXPECTED_OUTPUT }}" ]] && [[ "${{ env.OUTPUT_INIT }}" == "${{ env.EXPECTED_OUTPUT }}" ]] && [[ "${{ env.OUTPUT_DOCKERIZE }}" == "${{ env.EXPECTED_OUTPUT }}" ]] ; then
+          echo "Logs outputs contain 'Hello World !!!'"
+          else
+          echo "Error: Logs outputs does not contain 'Hello World !!!'"
+          exit 1
+          fi

@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: 06-job
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      containers:
+      - name: writer
+        image: ubuntu:23.10
+        command: ["sh","-c", "echo 'Hello World !!!' > /data-job/test1.txt"]
+        volumeMounts:
+          - name: data-job
+            mountPath: /data-job 
+      - name: reader
+        image: ubuntu:23.10
+        command: ["sh", "-c", "cat /data-job/test1.txt && sleep infinity"]
+        volumeMounts:
+          - name: data-job
+            mountPath: /data-job
+      restartPolicy: Never
+      volumes:
+        - name: data-job
+          emptyDir: {}

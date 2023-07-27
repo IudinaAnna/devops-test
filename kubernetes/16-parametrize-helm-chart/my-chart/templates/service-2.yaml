@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.springBootApp.name }}
+  labels: 
+    component: {{ .Values.springBootApp.name }}
+spec:
+  selector:
+    component: {{ .Values.springBootApp.name }}
+  type: LoadBalancer  
+  ports:
+  - port: 8080
+    targetPort: 80
+    protocol: TCP
+

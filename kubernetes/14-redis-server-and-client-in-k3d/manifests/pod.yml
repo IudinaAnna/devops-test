@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: 14-redis
+spec:
+  containers:
+    - name: redis-server
+      image: demo-registry:5000/14-redis-server-and-client-in-k3d:0.1
+      volumeMounts:
+        - name: redis-data
+          mountPath: /data
+    - name: redis-client
+      image: redis:alpine3.18
+      command: ["/bin/sh", "-c"]
+      args: ["redis-cli -h localhost -p 6379 SET name 'Anna' && redis-cli -h localhost -p 6379 SAVE"]
+      volumeMounts:
+        - name: redis-data
+          mountPath: /data
+  volumes:
+    - name: redis-data
+      hostPath: 
+        path: /data

@@ -1,0 +1,84 @@
+name: D-03 Node Hello World
+on:
+  push:
+    paths:
+      - 'docker/03-node-hello-world-in-docker/**'
+      - '.github/workflows/03-node-hello-world-in-docker.yml'
+env:
+  EXPECTED_OUTPUT: "Hello World !!!"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Print current path
+        run: |
+          echo ${{ github.workspace }}
+
+      - name: Check working directory
+        working-directory: ${{ github.workspace }}/docker/03-node-hello-world-in-docker
+        run: |
+          if [ -d "${{ github.workspace }}/docker/03-node-hello-world-in-docker" ]; then
+          echo "Directory exists"
+          else
+          echo "Directory does not exist" 
+          exit 1
+          fi
+
+      - name: Check docker available
+        run: docker info
+
+      - name: Check if src directory is
+        run: |
+          if [ -d "./docker/03-node-hello-world-in-docker/src" ]; then
+          echo "Directory 'src' exists"
+          else
+          echo "Error: Directory 'src' does not exist"
+          exit 1
+          fi
+
+      - name: Check if src directory has Dockerfile and .js files
+        run: |
+          if [ -f "./docker/03-node-hello-world-in-docker/src/Dockerfile" ] || [ -n "$(find ./docker/03-node-hello-world-in-docker/src -name '*.js' -type f)" ]; then
+          ls ./docker/03-node-hello-world-in-docker/src
+          echo "All files exist inside 'src' "
+          else
+          echo "Error: Files does not exist inside 'src' "
+          exit 1
+          fi
+
+      - name: Build Docker image. Check if image was created.
+        run: |
+          docker build -t 03-node-hello-world-java-in-docker:0.1 ./docker/03-node-hello-world-in-docker/src
+          sleep 10
+          docker images | grep 03-node-hello-world-java-in-docker
+          if [ $? -eq 0 ]; then
+          echo "Image was created"
+          else exit 1
+          fi
+
+      - name: Run docker container
+        run: |
+          OUTPUT=$(docker run --name 03-task-1 03-node-hello-world-java-in-docker:0.1)
+          STATUS=$(docker inspect -f '{{ .State.Status }}' 03-task-1 )
+          echo "CONTAINER_STATUS=${STATUS}" >> $GITHUB_ENV
+          echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
+
+      - name: Check container output
+        run: |
+          if [[ "${{ env.OUTPUT }}" != "${{ env.EXPECTED_OUTPUT }}" ]]; then
+          echo "Unexpected output: ${{ env.OUTPUT }}"
+          exit 1
+          fi
+          echo "Output: ${{ env.OUTPUT }}"
+
+      - name: Check container status. Statis should be exited.
+        run: |
+          if [[ "${{ env.CONTAINER_STATUS }}" != "exited" ]]; then
+          echo "Container did not exit successfully"
+          exit 1
+          fi

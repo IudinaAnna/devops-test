@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.Values.configmap.name}}
+data: 
+  DB_HOST: {{ .Values.database.host }}
+  DB_PORT: {{ .Values.database.port | quote}}
+  DB_NAME: {{ .Values.database.name}}
+  PGDATA: /var/lib/postgresql/data
+ 
+
+  
+  

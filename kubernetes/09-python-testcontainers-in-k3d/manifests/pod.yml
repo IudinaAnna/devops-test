@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: 09-python-testcontainers
+spec:
+  containers:
+  - name: dind-container
+    image: docker:23.0.1-dind-alpine3.17
+    command: [dockerd-entrypoint.sh]
+    securityContext:
+           privileged: true
+    env:
+      - name: DOCKER_TLS_CERTDIR
+        value: ""
+  - name: python-testcontontainers
+    image: demo-registry:5000/09-python-testcontainers-in-k3d:0.1
+    command: ["/bin/sh", "-c"]
+    args: ["dockerize -wait tcp://127.0.0.1:2375 -timeout 30s pytest -s --html=/app/report/report.html && cp -r /app/report /python/python && chown -R $USER_ID:$GROUP_ID /python/python && sleep infinity"]
+    env:
+      - name: DOCKER_HOST
+        value: tcp://127.0.0.1:2375
+      - name: TESTCONTAIENRS_RYUK_DISABLED
+        value: "true"
+      - name: TESTCONTAINERS_CHECKS_DISABLE 
+        value: "true"  
+    volumeMounts: 
+      - name: volume 
+        mountPath: /python
+  volumes: 
+    - name: volume 
+      hostPath: 
+        path: /report          

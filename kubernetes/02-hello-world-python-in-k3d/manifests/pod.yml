@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: 02-hello-world-python
+  labels:
+    name: 02-hello-world-python
+spec:
+  restartPolicy: Never
+  containers:
+    - name: 02-hello-world-python
+      image: demo-registry:5000/02-hello-world-python-in-k3d:0.1
+      command: ["python", "python-test.py"]
+      args: ["--name", "Anna"]
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"

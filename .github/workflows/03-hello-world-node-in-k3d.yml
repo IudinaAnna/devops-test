@@ -1,0 +1,134 @@
+name: K-03 Hello World Node in K3d
+on:
+  push:
+    paths: 
+      - './kubernetes/03-hello-world-node-in-k3d/**'
+      - '.github/workflows/03-hello-world-node-in-k3d.yml'  
+env:
+  POD_OUTPUT: "Hello World !!!"
+  
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Setup k3d
+      uses: nolar/setup-k3d-k3s@v1
+
+    - name: Print current path
+      run: echo ${{ github.workspace }}
+
+    - name: Check working directory 
+      run: | 
+        if [ -d "${{ github.workspace }}/kubernetes/03-hello-world-node-in-k3d" ]; then
+        echo "Directory exists"
+        else
+        echo "Directory does not exist"
+        fi
+   
+    - name: Check if docker is available
+      run: docker info
+   
+    - name: Check if kubernetes is available
+      run: k3d version
+    
+    - name: Check if src directory exists
+      run: |
+        if [ -d "./kubernetes/03-hello-world-node-in-k3d/src" ]; then
+        echo "Directory 'src' exists"
+        else 
+        echo "Error: Directory 'src' does not exist"
+        exit 1
+        fi
+    
+    - name: Check if manifests folder exists
+      run: |
+        if [ -d "./kubernetes/03-hello-world-node-in-k3d/manifests" ]; then
+        echo "Directory 'manifests' exists"
+        else 
+        echo "Error: manifests does not exist"
+        exit 1
+        fi
+    
+    - name: Check if src directory contains Dockerfile and .js files
+      run: |
+        if [ -f "./kubernetes/03-hello-world-node-in-k3d/src/Dockerfile" ] || [ -n "$(find ./kubernetes/03-hello-world-node-in-k3d/src -name '*.js' -type f)" ]; then
+        ls ./kubernetes/03-hello-world-node-in-k3d/src
+        echo "All files exist inside 'src' "
+        else
+        echo "Error: Files does not exist inside 'src' "
+        exit 1
+        fi
+        
+    - name: Check if manifests directory contains pod.yml file
+      run: |
+        if [ -f "./kubernetes/03-hello-world-node-in-k3d/manifests/pod.yml" ]; then
+        ls ./kubernetes/03-hello-world-node-in-k3d/manifests
+        echo "All files exist inside 'manifests' "
+        else
+        echo "Error: Files does not exist inside 'manifests' "
+        exit 1
+        fi
+
+    - name: Create cluster
+      run: k3d cluster create demo-cluster --registry-create demo-registry:12345
+    
+    - name: Build, tag and push the image
+      run: |
+        docker build -t 03-hello-world-node-in-k3d:0.1 ./kubernetes/03-hello-world-node-in-k3d/src
+        docker tag 03-hello-world-node-in-k3d:0.1 localhost:12345/03-hello-world-node-in-k3d:0.1
+        docker push localhost:12345/03-hello-world-node-in-k3d:0.1
+
+    - name: Check if tagged image was created successfully 
+      run: |
+        TAGGED_IMAGE=$(docker images -q localhost:12345/03-hello-world-node-in-k3d:0.1)
+        if [ -n "$TAGGED_IMAGE" ]; then
+        echo "Image localhost:12345/03-hello-world-node-in-k3d:0.1 exists"
+        else
+        echo "Image localhost:12345/03-hello-world-node-in-k3d:0.1 does not exist"
+        exit 1
+        fi
+        
+    - name: Apply manifest 
+      run: |
+        kubectl apply -f ./kubernetes/03-hello-world-node-in-k3d/manifests
+        POD_NAME="03-hello-world-node"
+        kubectl wait pod $POD_NAME --for=condition=Ready --timeout=20s
+    
+    - name: Check if pod's logs are available
+      run: |
+        kubectl get pods
+        kubectl describe pods
+        OUTPUT=$(kubectl logs 03-hello-world-node -c 03-hello-world-node)
+        echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
+        echo "OUTPUT=${OUTPUT}"
+    
+    - name: Verify output. Expected output - "Hello World !!!"
+      run: |
+        if [[ "${{ env.OUTPUT }}" == "${{ env.POD_OUTPUT }}" ]]; then
+        echo "Log output contains 'Hello World !!!'"
+        else
+        echo "Error: Log output does not contain 'Hello World !!!'"
+        exit 1
+        fi
+        
+    - name: Check if pod did not restart
+      run: |
+        restarts=$(kubectl describe pod 03-hello-world-node | grep -i 'restart count' | grep -o -E '[0-9]{0,2}' | awk '{s+=$1} END {print s}')
+        echo "Restart count: $restarts"
+        if [ "$restarts" -gt 0 ]; then
+        echo "Error: Pod restarted $restarts times."
+        exit 1
+        fi
+
+
+ 
+    
+   

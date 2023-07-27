@@ -1,0 +1,125 @@
+name: K-13 Three deployments with two services
+
+on:
+  push:
+    paths:
+      - '.github/workflows/13-create-3-deployments-with-2-services.yml'
+      - 'kubernetes/13-create-3-deployments-with-2-services/**'
+env:
+  MANIFESTS_FOLDER: "${{ github.workspace }}/kubernetes/13-create-3-deployments-with-2-services"
+  FIRST_PORT: "18081"
+  SECOND_PORT: "18080"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup k3d
+        uses: nolar/setup-k3d-k3s@v1
+
+      - name: Print current path
+        run: |
+          echo ${{ github.workspace }} 
+
+      - name: Check working directory
+        run: |
+          if [ -d ${MANIFESTS_FOLDER} ]; then
+          echo "Directory exists"
+          else
+          echo "Directory does not exist"
+          exit 1
+          fi
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Verify Kubernetes installation
+        run: k3d --version
+
+      - name: Create cluster with registry
+        run: k3d cluster create demo-cluster --registry-create demo-registry:12345
+
+      - name: Apply services manifests
+        run: |
+          kubectl apply -f ${{ env.MANIFESTS_FOLDER }}
+
+      - name: Wait for pods to be ready
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl wait deployment/nginx-1 -n default --for=condition=available'
+          ./wait_status_code_and_logs.sh 'kubectl wait deployment/nginx-2 -n default --for=condition=available'
+          ./wait_status_code_and_logs.sh 'kubectl wait deployment/nginx-3 -n default --for=condition=available'
+
+      - name: Add ports to cluster
+        run: |
+          k3d cluster edit demo-cluster --port-add ${{ env.FIRST_PORT }}:8092@loadbalancer
+          k3d cluster edit demo-cluster --port-add ${{ env.SECOND_PORT }}:8093@loadbalancer
+
+      - name: Test load balancing
+        run: |
+          FIRST_SERVICE=()
+          for i in {1..10}; do
+          FIRST_SERVICE_ADRESSES_VALUE=$(curl -s http://localhost:${{ env.FIRST_PORT }} | grep -E -o "([0-9]{1,3}\.){1,3}[[:digit:]]{1,3}")
+          if [[ -n "$FIRST_SERVICE_ADRESSES_VALUE" ]] && ! [[ "${FIRST_SERVICE[@]}" =~ "$FIRST_SERVICE_ADRESSES_VALUE" ]]; then
+          FIRST_SERVICE+=("$FIRST_SERVICE_ADRESSES_VALUE")
+          fi
+          sleep 1
+          done
+          
+          echo "Unique first service address values: ${FIRST_SERVICE[@]}"
+          
+          FIRST_SERVICE_COUNT=${#FIRST_SERVICE[@]}
+          echo "Number of unique first service address values: $FIRST_SERVICE_COUNT"
+          echo "FIRST_SERVICE_COUNT=${FIRST_SERVICE_COUNT}" >> $GITHUB_ENV
+          
+          SECOND_SERVICE=()
+          MATCHING_VALUE=() 
+          for i in {1..10}; do
+          SECOND_SERVICE_ADDRESSES_VALUE=$(curl -s http://localhost:${{ env.SECOND_PORT }} | grep -E -o "([0-9]{1,3}\.){1,3}[[:digit:]]{1,3}")
+          if [[ -n "$SECOND_SERVICE_ADDRESSES_VALUE" ]] && ! [[ "${SECOND_SERVICE[@]}" =~ "$SECOND_SERVICE_ADDRESSES_VALUE" ]]; then
+          SECOND_SERVICE+=("$SECOND_SERVICE_ADDRESSES_VALUE")
+          fi
+          
+          if [[ -n "$SECOND_SERVICE_ADDRESSES_VALUE" ]] && [[ "${FIRST_SERVICE[@]}" =~ $SECOND_SERVICE_ADDRESSES_VALUE ]]; then
+          if ! [[ "${MATCHING_VALUE[@]}" =~ "$SECOND_SERVICE_ADDRESSES_VALUE" ]]; then
+          MATCHING_VALUE+=("$SECOND_SERVICE_ADDRESSES_VALUE")
+          echo "Matching value for both services: $SECOND_SERVICE_ADDRESSES_VALUE"
+          fi
+          fi
+          sleep 1
+          done
+          
+          if [[ -z "${MATCHING_VALUE[@]}" ]]; then
+          echo "No unique matching values found."
+          exit 1
+          fi
+          
+          echo "Unique second service address values: ${SECOND_SERVICE[@]}"
+          
+          SECOND_SERVICE_COUNT=${#SECOND_SERVICE[@]}
+          echo "Number of unique second service address values: $SECOND_SERVICE_COUNT"
+          echo "SECOND_SERVICE_COUNT=${SECOND_SERVICE_COUNT}" >> $GITHUB_ENV
+          
+          MATCHING_VALUE_COUNT=${#MATCHING_VALUE[@]}
+          echo "Number of matching service address values: $MATCHING_VALUE_COUNT"
+          echo "MATCHING_VALUE_COUNT=${MATCHING_VALUE_COUNT}" >> $GITHUB_ENV  
+
+      - name: Check if both of services consist of two ip adresses.
+        run: |
+          if [[ "${{ env.FIRST_SERVICE_COUNT }}" == "2" ]] && [[ "${{ env.SECOND_SERVICE_COUNT }}" == "2" ]]; then
+          echo "The load balancing is shared between two services"
+          else
+          echo "The loadbalancing is not shared between two services"
+          exit 1
+          fi
+
+      - name: Check the number of matching values
+        run: |
+          if [[ "${{ env.MATCHING_VALUE_COUNT }}" != "1" ]]; then
+          echo " Matching address: $MATCHING_VALUE"
+          echo " Matching value: $MATCHING_VALUE_COUNT"
+          exit 1
+          fi   

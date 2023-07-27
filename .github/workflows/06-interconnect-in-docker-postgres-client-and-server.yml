@@ -1,0 +1,62 @@
+name: D-06 Interconnection in Docker Postgres Client Sand Server
+on:
+  push:
+    paths:
+      - 'docker/06-interconnect-in-docker-postgres-client-and-server/**'
+      - '.github/workflows/06-interconnect-in-docker-postgres-client-and-server.yml'
+
+env:
+  CONTAINER_STATUS: "running"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Create network
+        run: |
+          docker network create demo-network
+          docker network ls | grep demo-network
+          if [ $? -eq 0 ]; then
+          echo " "demo-network" network was created successfully"
+          fi
+
+      - name: Run postgres-server
+        run: |
+          docker run -d --name postgres-server \
+          --network demo-network --network-alias postgres-alias \
+          -e POSTGRES_USER=aiudina \
+          -e POSTGRES_PASSWORD=123 \
+          -d \
+          -p 6432:5432 \
+          postgres:14.5-alpine3.16
+          SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' postgres-server)
+          echo "SERVER_STATUS=${SERVER_STATUS}" >> $GITHUB_ENV
+
+      - name: Check postgres-server status
+        run: |
+          if [[ "${{ env.SERVER_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
+          echo "Postgres-server container is running"
+          else
+          echo "Postgres-server container is not running"
+          exit 1
+          fi
+
+      - name: Run postgres-client
+        run: |
+          if ./wait_status_code_and_logs.sh "docker run --rm --name postgres_client \
+          --network demo-network \
+          --network-alias psql-client \
+          postgres:latest \
+          psql postgresql://aiudina:123@postgres-alias:5432"; then
+          echo "The connection between postgres-server and postgres-client is successful"
+          else
+          echo "The connection between postgres-server and postgres-client is not successful"
+          exit 1
+          fi

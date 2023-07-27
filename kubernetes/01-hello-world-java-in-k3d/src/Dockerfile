@@ -1,0 +1,8 @@
+FROM openjdk:11-slim-bullseye as compiler 
+WORKDIR /app
+COPY ./HelloWorld.java ./jarHelloWorld.txt ./
+RUN javac HelloWorld.java && jar cvfm HelloWorld.jar jarHelloWorld.txt HelloWorld.class
+FROM openjdk:11-jre-slim-bullseye 
+COPY --from=compiler /app/*.jar /app/*.jar
+CMD ["java", "-jar" , "/app/*.jar" ] 
+

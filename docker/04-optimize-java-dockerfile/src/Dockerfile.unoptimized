@@ -1,0 +1,9 @@
+FROM ubuntu:23.10
+WORKDIR /app
+RUN apt update && apt install openjdk-11-jdk -y
+COPY ./HelloWorld.java ./ 
+COPY ./jarHelloWorld.txt ./ 
+RUN javac HelloWorld.java 
+RUN jar cvfm HelloWorld.jar jarHelloWorld.txt HelloWorld.class
+CMD ["java", "-jar" , "/app/HelloWorld.jar" ] 
+

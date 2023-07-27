@@ -7,5 +7,5 @@ spec:
   selector:
     app: 07-client-and-server
   ports:
-    - port: 8092
-      targetPort: 8057
+   - port: 8092
+     targetPort: 8057

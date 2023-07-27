@@ -1,0 +1,106 @@
+name: D-02 Python Hello World 
+
+on:
+  push:
+    paths: 
+      - 'docker/02-python-hello-world-in-docker/**'
+      - '.github/workflows/02-python-hello-world-in-docker.yml'
+env:
+  EXPECTED_OUTPUT1: "hello, Anna"
+  EXPECTED_OUTPUT2: "hello, None"
+  CONTAINERS_STATUS: "exited"
+  EXIT_STATUS: "0"
+  TASK_FOLDER: "${{ github.workspace }}/docker/02-python-hello-world-in-docker"
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Print current path
+      run: |
+        echo ${{ github.workspace }}
+
+    - name: Check working directory
+      run: |
+        if [ -d ${TASK_FOLDER} ]; then
+        echo "Directory exists"
+        else
+        echo "Directory does not exist"
+        exit 1
+        fi
+    
+    - name: Check docker availability
+      run: docker info   
+    
+    - name: Check if src directory is
+      run: |
+        if [ -d ${TASK_FOLDER}/src ]; then
+        echo "Directory 'src' exists"
+        else 
+        echo "Error: SRC does not exist"
+        exit 1
+        fi
+    
+    - name: Check if src directory has Dockerfile and .py files 
+      run: |
+        if [ -f ${TASK_FOLDER}/src/Dockerfile ] && [ -n "$(find ${TASK_FOLDER}/src -name '*.py' -type f)" ]; then
+        echo "All files exist inside 'src' "
+        ls ${TASK_FOLDER}/src
+        else
+        echo "Error: Files does not exist inside 'src' "
+        exit 1
+        fi
+    
+    - name: Build Docker image
+      run: |
+        docker build -t 02-python-hello-world-java-in-docker:0.1 ${TASK_FOLDER}/src
+    
+    - name: Check if fimage was created
+      run: |
+        docker images | grep 02-python-hello-world-java-in-docker
+        if [ $? -eq 0 ]; then
+        echo "Image was created"
+        else exit 1
+        fi 
+        docker image inspect 02-python-hello-world-java-in-docker:0.1 > /dev/null   
+
+    - name: Run Docker containers
+      run: |
+        # Run two containers: 02-task-1 with parameter --name Anna; 02-task-2 without parameter
+        OUTPUT1=$(docker run --name 02-task-1 02-python-hello-world-java-in-docker:0.1 --name Anna)
+        OUTPUT2=$(docker run --name 02-task-2 02-python-hello-world-java-in-docker:0.1)
+        STATUS1=$(docker inspect -f '{{ .State.Status }}' 02-task-1 )
+        STATUS2=$(docker inspect -f '{{ .State.Status }}' 02-task-2 )
+        EXIT_STATUS1=$(docker inspect -f '{{ .State.ExitCode }}' 02-task-1 )
+        EXIT_STATUS2=$(docker inspect -f '{{ .State.ExitCode }}' 02-task-2 )
+        echo "CONTAINER_STATUS1=${STATUS1}" >> $GITHUB_ENV
+        echo "CONTAINER_STATUS2=${STATUS2}" >> $GITHUB_ENV
+        echo "EXIT_CODE_STATUS1=${EXIT_STATUS1}" >> $GITHUB_ENV
+        echo "EXIT_CODE_STATUS2=${EXIT_STATUS2}" >> $GITHUB_ENV
+        echo "OUTPUT1=${OUTPUT1}" >> $GITHUB_ENV
+        echo "OUTPUT2=${OUTPUT2}" >> $GITHUB_ENV
+         
+    - name: Check containers output
+      run: |
+        if [[ "${{ env.OUTPUT1 }}" != "${{ env.EXPECTED_OUTPUT1 }}" || "${{ env.OUTPUT2 }}" != "${{ env.EXPECTED_OUTPUT2 }}" ]]; then
+        echo "Unexpected output: ${{ env.OUTPUT1 }} ${{ env.OUTPUT2 }}"
+        exit 1
+        fi
+        echo "Output: ${{ env.OUTPUT1 }} ${{ env.OUTPUT2 }}"
+
+    - name: Check containers status and code. Status should be exited and 0
+      run: |
+        if [[ "${{ env.CONTAINER_STATUS1 }}" != "${{ env.CONTAINERS_STATUS }}" || "${{ env.CONTAINER_STATUS2 }}" != "${{ env.CONTAINERS_STATUS }}"  ]]; then
+        echo "Containers did not exit successfully"
+        exit 1
+        fi    
+
+        if [[ "${{ env.EXIT_CODE_STATUS1 }}" != "${{ env.EXIT_STATUS }}" || "${{ env.EXIT_CODE_STATUS2 }}" != "${{ env.EXIT_STATUS }}"  ]]; then
+        echo "Error: Exit codes ${EXIT_CODE_STATUS1}, ${EXIT_CODE_STATUS2}"
+        exit 1
+        fi
+
