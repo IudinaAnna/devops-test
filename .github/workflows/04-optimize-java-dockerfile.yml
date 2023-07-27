@@ -20,16 +20,7 @@ jobs:
 
       - name: Check docker available
         run: docker info
-
-      - name: Check if src directory is
-        run: |
-          if [ -d ${TASK_FOLDER}/src ]; then
-          echo "Directory 'src' exists"
-          else
-          echo "Error: Directory 'src' does not exist"
-          exit 1
-          fi
-
+        
       - name: Check if src directory has Dockerfile.unoptimized, Dockerfile.optimized, .java and .txt files
         run: |
           if [ -f ${TASK_FOLDER}/src/Dockerfile.unoptimized ] || [ -f ${TASK_FOLDER}/src/Dockerfile.optimized ] || [ -n "$(find ${TASK_FOLDER}/src -name '*.java' -type f)" ] || [ -n "$(find ${TASK_FOLDER}/src -name '*.txt' -type f)" ]; then
