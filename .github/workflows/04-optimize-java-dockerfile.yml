@@ -23,8 +23,8 @@ jobs:
         
       - name: Check if src directory has Dockerfile.unoptimized, Dockerfile.optimized, .java and .txt files
         run: |
-          if [ -f ${{ env.SRC_FOLDER }}/Dockerfile.unoptimized ] || \
-          [ -f ${{ env.SRC_FOLDER }}/Dockerfile.optimized ] || \
+          if [ -f "${{ env.SRC_FOLDER }}/Dockerfile.unoptimized" ] || \
+          [ -f "${{ env.SRC_FOLDER }}/Dockerfile.optimized" ] || \
           [ -n "$(find ${{ env.SRC_FOLDER }} -name '*.java' -type f)" ] || \
           [ -n "$(find ${{ env.SRC_FOLDER }} -name '*.txt' -type f)" ]; then
           ls ${{ env.SRC_FOLDER }}
