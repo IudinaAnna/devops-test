@@ -56,7 +56,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ${{ env.WORK_FOLDER }}
-          file: ${{ env.WORK_FOLDER }}/springboot-api-rest-example/api"/docker/Dockerfile.prod
+          file: ${{ env.WORK_FOLDER }}/springboot-api-rest-example/api/docker/Dockerfile.prod
           push: true
           tags: localhost:12345/spring-boot-app:0.1
           build-args: |
