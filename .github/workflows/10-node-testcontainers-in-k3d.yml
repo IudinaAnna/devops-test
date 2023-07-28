@@ -102,6 +102,8 @@ jobs:
         run: |
           USER=$(stat -c '%U' ${WORK_PATH}/report)
           GROUP=$(stat -c '%G' ${WORK_PATH}/report)
+          echo "User=$USER, $(id -un)"
+          echo "Group=$GROUP, $(id -gn)" 
           if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
           echo "User=$USER, $(id -un)"
           echo "Group=$GROUP, $(id -gn)" 
