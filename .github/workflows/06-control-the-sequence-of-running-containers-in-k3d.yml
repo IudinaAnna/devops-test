@@ -34,6 +34,7 @@ jobs:
           file: ${{ env.WORK_FOLDER }}/src/Dockerfile
           push: true
           tags: localhost:12345/06-control-the-sequence-dockerize:0.1
+          buildkit: 1
 
       - name: Apply manifests
         run: |
