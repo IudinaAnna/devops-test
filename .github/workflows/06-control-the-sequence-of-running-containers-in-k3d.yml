@@ -6,12 +6,12 @@ on:
       - 'kubernetes/06-control-the-sequence-of-running-containers-in-k3d/**'
 env:
   EXPECTED_OUTPUT: "Hello World !!!"
+  WORK_FOLDER: "${{ github.workspace }}/kubernetes/06-control-the-sequence-of-running-containers-in-k3d"
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -27,19 +27,17 @@ jobs:
       - name: Create cluster with registry
         run: k3d cluster create demo-cluster --registry-create demo-registry:12345
 
-      - name: Build, tag and push the image for dockerize
-        run: |
-          docker build -t 06-control-the-sequence-dockerize:0.1 \
-          ./kubernetes/06-control-the-sequence-of-running-containers/src
-          docker tag 06-control-the-sequence-dockerize:0.1 localhost:12345/06-control-the-sequence-dockerize:0.1
-          docker push localhost:12345/06-control-the-sequence-dockerize:0.1
+      - name: Build, tag and push the image
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.WORK_FOLDER }}/src
+          file: ${{ env.WORK_FOLDER }}/src/Dockerfile
+          push: true
+          tags: localhost:12345/06-control-the-sequence-dockerize:0.1
 
       - name: Apply manifests
         run: |
-          kubectl apply -f ./kubernetes/06-control-the-sequence-of-running-containers/manifests/dockerize.yml
-          kubectl apply -f ./kubernetes/06-control-the-sequence-of-running-containers/manifests/init.yml
-          kubectl apply -f ./kubernetes/06-control-the-sequence-of-running-containers/manifests/sleep.yml 
-          kubectl apply -f ./kubernetes/06-control-the-sequence-of-running-containers/manifests/job.yml
+          kubectl apply -f ${WORK_FOLDER}/manifests
           POD_NAMES=$(kubectl get pods -l job-name=06-job -o jsonpath='{.items[*].metadata.name}')
           echo "POD_NAMES=${POD_NAMES}" >> $GITHUB_ENV
 
