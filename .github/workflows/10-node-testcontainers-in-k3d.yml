@@ -72,7 +72,7 @@ jobs:
 
       - name: Watch `node` container logs
         run: |
-          ./wait_status_code_and_logs.sh 'kubectl logs 10-node-testcontainers -c node' 'generated'
+          ./wait_status_code_and_logs.sh 'kubectl logs 10-node-testcontainers -c node' 'passed'
           kubectl logs 10-node-testcontainers -c node > 10-logs.txt
           BUILD_OUTPUT=$(grep -q "passed" 10-logs.txt)
           echo "BUILD_OUTPUT=${BUILD_OUTPUT}" >> $GITHUB_ENV
