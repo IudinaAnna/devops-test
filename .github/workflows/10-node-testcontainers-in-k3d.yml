@@ -1,0 +1,111 @@
+name: K-10 Node Testcontainers in K3d
+
+on:
+  push:
+    paths:
+      - '.github/workflows/10-node-testcontainers-in-k3d.yml'
+      - 'kubernetes/10-node-testcontainers-in-k3d/**'
+env:
+  BUILD_USER_ID: "$(id -u)"
+  BUILD_GROUP_ID: "$(id -g)"
+  WORK_PATH: "${{ github.workspace }}/kubernetes/10-node-testcontainers-in-k3d"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup k3d
+        uses: nolar/setup-k3d-k3s@v1
+
+      - name: Verify Docker installation
+        run: docker version
+
+      - name: Verify Kubernetes installation
+        run: k3d --version
+
+      - name: Initialize and update submodule
+        run: |
+          git submodule update --init --recursive submodules/testcontainers-node
+          cp -r ./submodules/testcontainers-node ${WORK_PATH}/src
+          if [ -d ${WORK_PATH}/src/testcontainers-node ]; then
+          echo "Submodule directory exists"
+          else
+          echo "Submodule directory does not exist"
+          exit 1
+          fi
+
+      - name: Create report folder and check if it was successfully created
+        run: |
+          mkdir ${WORK_PATH}/report
+          if [ -d ${WORK_PATH}/report ]; then
+          echo "Report folder was created"
+          ls ${WORK_PATH}/report
+          else
+          echo "Report folder wasn't created"
+          exit 1
+          fi
+
+      - name: Create cluster with registry
+        run: |
+          k3d cluster create demo-cluster \
+          --registry-create demo-registry:12345 \
+          --volume ${WORK_PATH}/report:/report@server:0
+
+      - name: Build, tag and push the image
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.WORK_PATH }}/src
+          file: ${{ env.WORK_PATH }}/src/Dockerfile
+          push: true
+          tags: localhost:12345/10-node-testcontainers-in-k3d:0.1
+          build-args: |
+            BUILD_USER_ID=$(id -u)
+            BUILD_GROUP_ID=$(id -g)
+            
+      - name: Apply manifest
+        run: |
+          kubectl apply -f ${WORK_PATH}/manifests
+
+      - name: Watch `node` container logs
+        run: |
+          ./wait_status_code_and_logs.sh 'kubectl logs 10-node-testcontainers -c node' 'generated'
+          kubectl logs 10-node-testcontainers -c node > 10-logs.txt
+          BUILD_OUTPUT=$(grep -q "passed" 10-logs.txt)
+          echo "BUILD_OUTPUT=${BUILD_OUTPUT}" >> $GITHUB_ENV
+
+      - name: Check if report is available in the report folder
+        run: |
+          if [ -d ${WORK_PATH}/report ]; then
+          ls ${WORK_PATH}/report
+          else
+          echo "Report does not exist"
+          exit 1
+          fi
+
+      - name: Check build status. Check if number of passed tests equal 4
+        run: |
+          PASSED=$(grep -oP '(?<=<div class="summary-total">Tests \(4\)</div><div class="summary-passed ">)[0-9]+(?= passed</div>)' ${WORK_PATH}/report/node/index.html)
+          echo "Tests Passed: $PASSED"
+          if [ "$PASSED" -eq 4 ]; then
+          echo "There are 4 passed tests"
+          else
+          echo "Tests do not match the expected results"
+          echo "Passed: $PASSED"
+          exit 1
+          fi
+
+      - name: Check report folder rights
+        run: |
+          USER=$(stat -c '%U' ${WORK_PATH}/report)
+          GROUP=$(stat -c '%G' ${WORK_PATH}/report)
+          if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
+          echo "User=$USER, $(id -un)"
+          echo "Group=$GROUP, $(id -gn)" 
+          else
+          echo "Error: user and group are incorrect"
+          exit 1
+          fi
