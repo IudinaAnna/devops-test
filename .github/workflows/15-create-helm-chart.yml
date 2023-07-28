@@ -81,4 +81,4 @@ jobs:
         run: ./wait_status_code_and_logs.sh 'psql postgresql://md_aiudina:123@localhost:${{ env.PSQL_PORT}}/check-db'
 
       - name: Verify that the connection to postgres is successful (another way)
-        run: ./wait_status_code_and_logs.sh 'pg_isready -h localhost -p 6432'
+        run: ./wait_status_code_and_logs.sh 'pg_isready -h localhost -p ${{ env.PSQL_PORT}}'
