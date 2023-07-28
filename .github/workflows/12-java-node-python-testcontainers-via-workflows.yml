@@ -6,8 +6,7 @@ on:
       - '.github/workflows/12-java-node-python-testcontainers-via-workflows.yml'
       - 'kubernetes/12-java-node-python-testcontainers-via-workflows/**'
 env:
-  SRC_FOLDER: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/src"
-  REPORT_FOLDER: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report"
+  WORK_PATH: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows"
 
 jobs:
   build:
@@ -30,16 +29,16 @@ jobs:
       - name: Initialize and update submodule
         run: |
           git submodule update --init --recursive 
-          cp -r ./submodules/testcontainers-java $SRC_FOLDER
-          cp -r ./submodules/testcontainers-python $SRC_FOLDER
-          cp -r ./submodules/testcontainers-node $SRC_FOLDER
+          cp -r ./submodules/testcontainers-java ${WORK_PATH}/src
+          cp -r ./submodules/testcontainers-python ${WORK_PATH}/src
+          cp -r ./submodules/testcontainers-node ${WORK_PATH}/src
 
       - name: Create report folder and check if it was successfully created
         run: |
-          mkdir $REPORT_FOLDER
-          if [ -d $REPORT_FOLDER ]; then
+          mkdir ${WORK_PATH}/report
+          if [ -d ${WORK_PATH}/report ]; then
           echo "Report folder was created"
-          ls -lha $REPORT_FOLDER
+          ls -lha ${WORK_PATH}/report
           else
           echo "Report folder wasn't created"
           exit 1
@@ -49,7 +48,7 @@ jobs:
         run: |
           k3d cluster create demo-cluster \
           --registry-create demo-registry:12345 \
-          --volume $REPORT_FOLDER:/report
+          --volume ${WORK_PATH}/report:/report
 
       - name: Create namespace and install argo via helm
         run: |
@@ -62,8 +61,8 @@ jobs:
       - name: Build, tag and push the java image
         uses: docker/build-push-action@v4
         with:
-          context: ${{ env.SRC_FOLDER }}
-          file: ${{ env.SRC_FOLDER }}/Dockerfile.java
+          context: ${{ env.WORK_PATH }}/src
+          file: ${{ env.WORK_PATH }}/src/Dockerfile.java
           push: true
           tags: localhost:12345/12-java-testcontainers-via-workflows:0.1
           build-args: |
@@ -73,8 +72,8 @@ jobs:
       - name: Build, tag and push the python image
         uses: docker/build-push-action@v4
         with:
-          context: ${{ env.SRC_FOLDER }}
-          file: ${{ env.SRC_FOLDER }}/Dockerfile.python
+          context: ${{ env.WORK_PATH }}/src
+          file: ${{ env.WORK_PATH }}/src/Dockerfile.python
           push: true
           tags: localhost:12345/12-python-testcontainers-via-workflows:0.1
           build-args: |
@@ -84,8 +83,8 @@ jobs:
       - name: Build, tag and push the python image
         uses: docker/build-push-action@v4
         with:
-          context: ${{ env.SRC_FOLDER }}
-          file: ${{ env.SRC_FOLDER }}/Dockerfile.node
+          context: ${{ env.WORK_PATH }}/src
+          file: ${{ env.WORK_PATH }}/src/Dockerfile.node
           push: true
           tags: localhost:12345/12-node-testcontainers-via-workflows:0.1
           build-args: |
@@ -94,11 +93,11 @@ jobs:
 
       - name: Apply manifest
         run: |
-          kubectl apply -f ./kubernetes/12-java-node-python-testcontainers-via-workflows/manifests
+          kubectl apply -f ${WORK_PATH}/manifests
 
       - name: Check if java build was successful and reports are available in report folder
         run: |
-          JAVA_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/java/reports/tests/test/index.html"
+          JAVA_REPORT=${WORK_PATH}/report/java/reports/tests/test/index.html
           ./wait_status_code_and_logs.sh "ls $JAVA_REPORT"
           cat $JAVA_REPORT
           if grep -o "Success" $JAVA_REPORT; then
@@ -110,7 +109,7 @@ jobs:
 
       - name: Check if python build was successful and reports are available in report folder
         run: |
-          PYTHON_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/python/report.html"
+          PYTHON_REPORT=${WORK_PATH}/report/python/report.html
           ./wait_status_code_and_logs.sh "ls $PYTHON_REPORT"
           cat $PYTHON_REPORT
           if grep -q "2 passed" $PYTHON_REPORT; then
@@ -122,7 +121,7 @@ jobs:
 
       - name: Check if node build was successful and reports are available in report folder
         run: |
-          NODE_REPORT="${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows/report/node/index.html"
+          NODE_REPORT=${WORK_PATH}/report/node/index.html
           ./wait_status_code_and_logs.sh "ls $NODE_REPORT"
           cat $NODE_REPORT
           if grep -q "4 passed" $NODE_REPORT; then
@@ -134,8 +133,8 @@ jobs:
 
       - name: Check report folder rights
         run: |
-          USER=$(stat -c '%U' $REPORT_FOLDER)
-          GROUP=$(stat -c '%G' $REPORT_FOLDER)
+          USER=$(stat -c '%U' ${WORK_PATH}/report)
+          GROUP=$(stat -c '%G' ${WORK_PATH}/report)
           if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
           echo "USER=$USER, $(id -un)"
           echo "GROUP=$GROUP, $(id -gn)" 
