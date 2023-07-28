@@ -3,10 +3,10 @@ on:
   push:
     paths:
       - '.github/workflows/06-control-the-sequence-of-running-containers-in-k3d.yml'
-      - 'kubernetes/06-control-the-sequence-of-running-containers-in-k3d/**'
+      - 'kubernetes/06-control-the-sequence-of-running-containers/**'
 env:
   EXPECTED_OUTPUT: "Hello World !!!"
-  WORK_FOLDER: "${{ github.workspace }}/kubernetes/06-control-the-sequence-of-running-containers-in-k3d"
+  WORK_FOLDER: "${{ github.workspace }}/kubernetes/06-control-the-sequence-of-running-containers"
 
 jobs:
   build:
@@ -34,7 +34,6 @@ jobs:
           file: ${{ env.WORK_FOLDER }}/src/Dockerfile
           push: true
           tags: localhost:12345/06-control-the-sequence-dockerize:0.1
-          buildkit: 1
 
       - name: Apply manifests
         run: |
