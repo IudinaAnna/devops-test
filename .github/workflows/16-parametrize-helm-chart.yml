@@ -10,6 +10,7 @@ env:
   PGADMIN_PORT: "8001"
   PSQL_PORT: "6432"
   WORK_FOLDER: "${{ github.workspace }}/kubernetes/16-parametrize-helm-chart"
+  API_FOLDER: "${{ github.workspace }}/kubernetes/16-parametrize-helm-chart/springboot-api-rest-example/api"
 
 jobs:
   build:
@@ -55,8 +56,8 @@ jobs:
       - name: Build, tag and push the image
         uses: docker/build-push-action@v4
         with:
-          context: ${{ env.WORK_FOLDER }}
-          file: ${{ env.WORK_FOLDER }}/springboot-api-rest-example/api/docker/Dockerfile.prod
+          context: ${{ env.API_FOLDER }}
+          file: ${{ env.API_FOLDER }}/docker/Dockerfile.prod
           push: true
           tags: localhost:12345/spring-boot-app:0.1
           build-args: |
