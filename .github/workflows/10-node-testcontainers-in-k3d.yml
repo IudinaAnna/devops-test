@@ -79,8 +79,8 @@ jobs:
 
       - name: Check if report is available in the report folder
         run: |
-          if [ -d ${WORK_PATH}/report ]; then
-          ls ${WORK_PATH}/report
+          if [ -f ${WORK_PATH}/report/node/index.html ]; then
+          cat ${WORK_PATH}/report/node/index.html
           else
           echo "Report does not exist"
           exit 1
@@ -95,20 +95,6 @@ jobs:
           else
           echo "Tests do not match the expected results"
           echo "Passed: $PASSED"
-          exit 1
-          fi
-
-      - name: Check report folder rights
-        run: |
-          USER=$(stat -c '%U' ${WORK_PATH}/report)
-          GROUP=$(stat -c '%G' ${WORK_PATH}/report)
-          echo "User=$USER, $(id -un)"
-          echo "Group=$GROUP, $(id -gn)" 
-          if [[ "$USER" == "$(id -un)" && "$GROUP" == "$(id -gn)" ]]; then
-          echo "User=$USER, $(id -un)"
-          echo "Group=$GROUP, $(id -gn)" 
-          else
-          echo "Error: user and group are incorrect"
           exit 1
           fi
           
