@@ -9,13 +9,12 @@ env:
   BUILD_USER_ID: "$(id -u)"
   BUILD_GROUP_ID: "$(id -g)"
   EXPECTED_OUTPUT: "Anna"
+  WORK_PATH: "${{ github.workspace }}/kubernetes/14-redis-server-and-client-in-k3d"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -35,10 +34,10 @@ jobs:
 
       - name: Create report folder and check if it was created successfully
         run: |
-          mkdir ./kubernetes/14-redis-server-and-client-in-k3d/data
-          if [ -d "${{ github.workspace }}/kubernetes/14-redis-server-and-client-in-k3d/data" ]; then
+          mkdir ${WORK_PATH}/data
+          if [ -d ${WORK_PATH}/data ]; then
           echo "Report folder was created successfully"
-          ls ./kubernetes/14-redis-server-and-client-in-k3d
+          ls ${WORK_PATH}
           else
           echo "Report folder wasn't created"
           exit 1
@@ -48,23 +47,25 @@ jobs:
         run: |
           k3d cluster create demo-cluster \
           --registry-create demo-registry:12345 \
-          --volume ${{ github.workspace }}/kubernetes/14-redis-server-and-client-in-k3d/data:/data
+          --volume ${WORK_PATH}/data:/data
 
-      - name: Build, tag and push image
-        run: |
-          docker build -t 14-redis-server-and-client-in-k3d:0.1 \
-          --build-arg USER_ID=${{ env.BUILD_USER_ID }} \
-          --build-arg GROUP_ID=${{ env.BUILD_GROUP_ID }} \
-          ./kubernetes/14-redis-server-and-client-in-k3d/src
-          docker tag 14-redis-server-and-client-in-k3d:0.1 localhost:12345/14-redis-server-and-client-in-k3d:0.1
-          docker push localhost:12345/14-redis-server-and-client-in-k3d:0.1
+      - name: Build, tag and push the image
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.WORK_PATH }}/src
+          file: ${{ env.WORK_PATH }}/src/Dockerfile
+          push: true
+          tags: localhost:12345/14-redis-server-and-client-in-k3d:0.1
+          build-args: |
+            BUILD_USER_ID=$(id -u)
+            BUILD_GROUP_ID=$(id -g)
 
       - name: Apply manifests
         run: |
-          kubectl apply -f ./kubernetes/14-redis-server-and-client-in-k3d/manifests
+          kubectl apply -f ${WORK_PATH}/manifests
 
       - name: Check if dump.rdb file was created successfully
-        run: ./wait_status_code_and_logs.sh  'cat ./kubernetes/14-redis-server-and-client-in-k3d/data/dump.rdb'
+        run: ./wait_status_code_and_logs.sh  'cat ${WORK_PATH}/data/dump.rdb'
 
       - name: Get the key
         run: |
