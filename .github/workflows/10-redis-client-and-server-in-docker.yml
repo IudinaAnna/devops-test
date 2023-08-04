@@ -82,12 +82,14 @@ jobs:
 
       - name: Get the key
         run: |
-          docker run -d --name my-redis-container redis:alpine3.18
-          docker cp ${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report/dump.rdb my-redis-container:/report
-          docker stop my-redis-container
-          docker start my-redis-container
-          GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
+          docker run -d --name my-redis redis:alpine3.18
+          docker cp ${{ github.workspace }}/docker/10-redis-client-and-server-in-docker/report/dump.rdb my-redis:/data
+          sleep 15
+          docker stop my-redis
+          docker start my-redis
+          GET_KEY=$(docker exec -i my-redis redis-cli get name)
           echo "GET_KEY=${GET_KEY}" >> $GITHUB_ENV
+          
       - name: Check the key value. Expected value - Anna
         run: |
           if [[ "${{ env.GET_KEY }}" == "${{ env.EXPECTED_OUTPUT }}" ]]; then
