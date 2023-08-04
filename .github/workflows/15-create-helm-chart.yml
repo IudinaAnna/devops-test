@@ -57,8 +57,8 @@ jobs:
       - name: Build, tag and push the image
         uses: docker/build-push-action@v4
         with:
-          context: ${{ env.API_FOLDER }}
-          file: ${{ env.API_FOLDER }}/docker/Dockerfile.prod
+          context: ${{ env.WORK_FOLDER }}/springboot-api-rest-example/api
+          file: ${{ env.WORK_FOLDER }}/springboot-api-rest-example/api/docker/Dockerfile.prod
           push: true
           tags: localhost:12345/spring-boot-app:0.1
           build-args: |
