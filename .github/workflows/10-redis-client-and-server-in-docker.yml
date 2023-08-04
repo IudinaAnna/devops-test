@@ -22,7 +22,7 @@ jobs:
 
       - name: Verify Docker installation
         run: docker version
-        
+
       - name: Create network
         run: |
           docker network create redisNetwork
@@ -30,7 +30,6 @@ jobs:
           if [ $? -eq 0 ]; then
           echo " "redisNetwork" network was created successfully"
           fi
-
       - name: Create report folder and check if it was successfully created
         run: |
           mkdir ${REPORT_FOLDER}
@@ -41,14 +40,12 @@ jobs:
           echo "Data folder is not created"
           exit 1
           fi
-
       - name: Build, tag and push the image
         run: |
           docker build -t 10-redis-client-and-server-in-docker:0.1  \
           --build-arg USER_ID=${{ env.BUILD_USER_ID }} \
           --build-arg GROUP_ID=${{ env.BUILD_GROUP_ID }} \
           ./docker/10-redis-client-and-server-in-docker/src
-
       - name: Run redis-server
         run: |
           docker run -d --name redis-server --network redisNetwork \
@@ -56,7 +53,6 @@ jobs:
           10-redis-client-and-server-in-docker:0.1 
           SERVER_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-server )
           echo "SERVER_STATUS=${SERVER_STATUS}" >> $GITHUB_ENV
-
       - name: Check redis-server container status
         run: |
           if [[ "${{ env.SERVER_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
@@ -65,13 +61,11 @@ jobs:
           echo "Container exited"
           exit 1
           fi
-
       - name: Run redis-client
         run: |
           docker run -d --name redis-client --network redisNetwork redis 
           CLIENT_STATUS=$(docker inspect -f '{{ .State.Status }}' redis-client )
           echo "CLIENT_STATUS=${CLIENT_STATUS}" >> $GITHUB_ENV
-
       - name: Check redis-server container status
         run: |
           if [[ "${{ env.CLIENT_STATUS }}" == "${{ env.CONTAINER_STATUS }}" ]]; then
@@ -80,7 +74,6 @@ jobs:
           echo "Container exited"
           exit 1
           fi
-
       - name: Set key using Redis CLI
         run: echo -e "SET name \"Anna\"\nSAVE" | docker exec -i redis-client redis-cli -h redis-server
 
@@ -95,7 +88,6 @@ jobs:
           docker start my-redis-container
           GET_KEY=$(docker exec -i my-redis-container redis-cli get name)
           echo "GET_KEY=${GET_KEY}" >> $GITHUB_ENV
-
       - name: Check the key value. Expected value - Anna
         run: |
           if [[ "${{ env.GET_KEY }}" == "${{ env.EXPECTED_OUTPUT }}" ]]; then
@@ -104,7 +96,6 @@ jobs:
           echo "The key is incorrect"
           exit 1
           fi
-
       - name: Check report folder rights
         run: |
           USER=$(stat -c '%U' ${REPORT_FOLDER})
