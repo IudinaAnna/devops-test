@@ -8,6 +8,8 @@ env:
   CHECK_POD_STATUS: "Running"
   POD_OUTPUT: "hello world!!!"
   TASK_FOLDER: "${{ github.workspace }}/kubernetes/01-hello-world-java-in-k3d"
+  CUSTOM_IMAGE: "localhost:12345/01-hello-world-java-in-k3d:0.1"
+  POD_CONTAINER_NAME: "01-hello-world-java"
   
 jobs:
   build:
@@ -75,29 +77,28 @@ jobs:
         context: ${{ env.TASK_FOLDER }}/src
         file: ${{ env.TASK_FOLDER }}/src/Dockerfile
         push: true
-        tags: localhost:12345/01-hello-world-java-in-k3d:0.1
+        tags: ${{ env.CUSTOM_IMAGE }}
 
     - name: Check if tagged image was created successfully 
       run: |
-        TAGGED_IMAGE=$(docker images -q localhost:12345/01-hello-world-java-in-k3d:0.1)
+        TAGGED_IMAGE=$(docker images -q ${{ env.CUSTOM_IMAGE }})
         if [ -n "$TAGGED_IMAGE" ]; then
-        echo "Image localhost:12345/01-hello-world-java-in-k3d:0.1 exists"
+        echo "Image ${{ env.CUSTOM_IMAGE }} exists"
         else
-        echo "Image localhost:12345/01-hello-world-java-in-k3d:0.1 does not exist"
+        echo "Image ${{ env.CUSTOM_IMAGE }} does not exist"
         exit 1
         fi
         
     - name: Apply manifest 
       run: |
         kubectl apply -f ${TASK_FOLDER}/manifests
-        POD_NAME="01-hello-world-java"
-        kubectl wait pod $POD_NAME --for=condition=Ready --timeout=30s
+        kubectl wait pod ${{ env.POD_CONTAINER_NAME }} --for=condition=Ready --timeout=30s
         POD_STATUS=$(kubectl get pod 01-hello-world-java -o jsonpath='{.status.phase}')
         echo "POD_STATUS=${POD_STATUS}" >> $GITHUB_ENV
     
     - name: Check if Pod logs present
       run: |
-        OUTPUT=$(kubectl logs 01-hello-world-java -c 01-hello-world-java)
+        OUTPUT=$(kubectl logs 01-hello-world-java -c ${{ env.POD_CONTAINER_NAME }})
         echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
         echo "OUTPUT=${OUTPUT}"
 
