@@ -3,7 +3,7 @@ name: K-12 Java Node Python testcontainers via Argo Workflows
 on:
   push:
     paths:
-      - '.github/workflows/12-java-node-python-testcontainers-via-workflows-in-k3d.yml'
+      - '.github/workflows/12-java-node-python-testcontainers-via-workflows.yml'
       - 'kubernetes/12-java-node-python-testcontainers-via-workflows/**'
 env:
   WORK_PATH: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows"
