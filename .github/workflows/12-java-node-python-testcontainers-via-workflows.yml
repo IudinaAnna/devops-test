@@ -1,8 +1,9 @@
 name: K-12 Java Node Python testcontainers via Argo Workflows
+
 on:
   push:
     paths:
-      - '.github/workflows/12-java-node-python-testcontainers-via-workflows.yml'
+      - '.github/workflows/12-java-node-python-testcontainers-via-workflows-in-k3d.yml'
       - 'kubernetes/12-java-node-python-testcontainers-via-workflows/**'
 env:
   WORK_PATH: "${{ github.workspace }}/kubernetes/12-java-node-python-testcontainers-via-workflows"
@@ -141,4 +142,3 @@ jobs:
           echo "Error: user and group are incorrect"
           exit 1
           fi
-          
