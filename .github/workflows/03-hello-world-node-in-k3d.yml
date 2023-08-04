@@ -7,6 +7,8 @@ on:
 env:
   POD_OUTPUT: "Hello World !!!"
   TASK_FOLDER: "${{ github.workspace }}/kubernetes/03-hello-world-node-in-k3d"
+  POD_CONTAINER_NAME: "03-hello-world-node"
+  CUSTOM_IMAGE: "localhost:12345/03-hello-world-node-in-k3d:0.1"
   
 jobs:
   build:
@@ -76,27 +78,26 @@ jobs:
         context: ${{ env.TASK_FOLDER }}/src
         file: ${{ env.TASK_FOLDER }}/src/Dockerfile
         push: true
-        tags: localhost:12345/03-hello-world-node-in-k3d:0.1
+        tags: ${{ env.CUSTOM_IMAGE }}
         
     - name: Check if tagged image was created successfully 
       run: |
-        TAGGED_IMAGE=$(docker images -q localhost:12345/03-hello-world-node-in-k3d:0.1)
+        TAGGED_IMAGE=$(docker images -q ${{ env.CUSTOM_IMAGE }} )
         if [ -n "$TAGGED_IMAGE" ]; then
-        echo "Image localhost:12345/03-hello-world-node-in-k3d:0.1 exists"
+        echo "Image $TAGGED_IMAGE exists"
         else
-        echo "Image localhost:12345/03-hello-world-node-in-k3d:0.1 does not exist"
+        echo "Image $TAGGED_IMAGE does not exist"
         exit 1
         fi
         
     - name: Apply manifest 
       run: |
         kubectl apply -f ${TASK_FOLDER}/manifests
-        POD_NAME="03-hello-world-node"
-        kubectl wait pod $POD_NAME --for=condition=Ready --timeout=30s
+        kubectl wait pod ${{ env.POD_CONTAINER_NAME }} --for=condition=Ready --timeout=30s
     
     - name: Check if pod's logs are available
       run: |
-        OUTPUT=$(kubectl logs 03-hello-world-node -c 03-hello-world-node)
+        OUTPUT=$(kubectl logs 03-hello-world-node -c ${{ env.POD_CONTAINER_NAME }})
         echo "OUTPUT=${OUTPUT}" >> $GITHUB_ENV
         echo "OUTPUT=${OUTPUT}"
     
